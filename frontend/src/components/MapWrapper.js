@@ -13,6 +13,9 @@ export default function MapWrapper({ role = "tutor" }) {
       try {
         // Gia sư → xem học viên | Học viên → xem gia sư
         const endpoint = role === "tutor" ? "tutors/students" : "tutors";
+        console.log("🔍 endpoint:", endpoint);
+        console.log("🔍 full URL:", api.defaults.baseURL + endpoint);
+
         const res = await api.get(endpoint);
         // ✅ Backend trả về { success, data }
         setUsers(res.data.data || []);

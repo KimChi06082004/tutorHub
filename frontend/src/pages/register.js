@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import api from "../utils/api";
 import { setAuthUser } from "../utils/auth";
+import Link from "next/link";
 
 export default function Register() {
   const router = useRouter();
@@ -79,7 +80,7 @@ export default function Register() {
         </form>
 
         <p className="login-link">
-          Đã có tài khoản? <a href="/login">Đăng nhập ngay</a>
+          Đã có tài khoản? <Link href="/login/">Đăng nhập</Link>
         </p>
       </div>
 

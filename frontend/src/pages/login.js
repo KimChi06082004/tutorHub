@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import api from "../utils/api";
 import { setAuthUser } from "../utils/auth";
+import Link from "next/link";
 
 export default function Login() {
   const router = useRouter();
@@ -119,12 +120,12 @@ export default function Login() {
 
         <p className="text-center mt-4 text-gray-600">
           Chưa có tài khoản?{" "}
-          <a
-            href="/register"
+          <Link
+            href="/register/"
             className="text-blue-600 hover:text-blue-700 font-medium"
           >
-            Đăng ký ngay
-          </a>
+            Đăng ký
+          </Link>
         </p>
       </div>
     </div>
