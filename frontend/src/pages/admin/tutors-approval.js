@@ -1,7 +1,6 @@
-// frontend/src/pages/admin/tutor-approval.js
 import { useEffect, useState } from "react";
-import Sidebar from "../../components/Sidebar";
 import TopbarAdmin from "../../components/TopbarAdmin";
+import Sidebar from "../../components/Sidebar";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
@@ -9,15 +8,16 @@ const API_BASE =
 export default function TutorApproval() {
   const [tutors, setTutors] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // === Lấy token từ localStorage ===
-  const token =
-    localStorage.getItem("accessToken") ||
-    localStorage.getItem("token") ||
-    localStorage.getItem("authToken");
+  // moved token handling into state so we don't access localStorage during SSR
+  const [token, setToken] = useState(null);
+  const [isClient, setIsClient] = useState(false);
 
   // === Gọi API lấy danh sách chờ duyệt ===
   const fetchPendingTutors = async () => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     try {
       const res = await fetch(`${API_BASE}/tutors/pending`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -32,8 +32,38 @@ export default function TutorApproval() {
   };
 
   useEffect(() => {
-    fetchPendingTutors();
+    setIsClient(true);
+    
+    // read token only on client
+    if (typeof window === "undefined") return;
+    const t =
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("authToken") ||
+      null;
+    setToken(t);
   }, []);
+
+  // when token becomes available on client, load tutors
+  useEffect(() => {
+    if (token) fetchPendingTutors();
+    else if (token === null) {
+      // no token found -> stop loading to avoid perpetual spinner
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  // Don't render the main content until we're on the client side
+  if (!isClient) {
+    return (
+      <div className="main-content bg-gray-50 min-h-screen p-6 md:p-10">
+        <div className="max-w-6xl mx-auto bg-white shadow-lg rounded-xl p-6">
+          <p className="text-center text-gray-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // === Duyệt hoặc từ chối ===
   const handleApprove = async (id, status) => {
@@ -43,6 +73,12 @@ export default function TutorApproval() {
       )
     )
       return;
+
+    if (!token) {
+      alert("⚠️ Bạn cần đăng nhập để thực hiện thao tác này.");
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE}/tutors/${id}/approve`, {
         method: "PUT",
