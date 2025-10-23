@@ -4,6 +4,7 @@ import api from "../../utils/api";
 import Sidebar from "../../components/Sidebar";
 import TopbarTutor from "../../components/TopbarTutor";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/router";
 
 // ✅ Import động VietnamMap (Leaflet)
 const VietnamMap = dynamic(() => import("../../components/VietnamMap"), {
@@ -11,6 +12,7 @@ const VietnamMap = dynamic(() => import("../../components/VietnamMap"), {
 });
 
 export default function TutorDashboard() {
+  const router = useRouter();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState(""); // 🔍 Môn học tìm kiếm
@@ -117,9 +119,7 @@ export default function TutorDashboard() {
                       cursor: "pointer",
                     }}
                     onClick={() =>
-                      alert(
-                        `👉 Sau này mở popup chi tiết / apply lớp ${cls.class_id}`
-                      )
+                      router.push(`/tutor/class-detail?id=${cls.class_id}`)
                     }
                   >
                     Chi tiết lớp

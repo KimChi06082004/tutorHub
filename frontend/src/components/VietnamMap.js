@@ -57,21 +57,38 @@ export default function VietnamMap({
 
       const map = leafletRef.current;
 
-      // ✅ Khi lat/lng thay đổi → fly tới vị trí mới
-      map.flyTo([lat, lng], zoom, { animate: true, duration: 1 });
+      // ✅ Ép kiểu lat/lng an toàn
+      const safeLat = parseFloat(lat);
+      const safeLng = parseFloat(lng);
 
-      // ✅ Hiển thị marker tại vị trí hiện tại
+      // ✅ Nếu lat/lng không hợp lệ thì bỏ qua
+      if (
+        !safeLat ||
+        !safeLng ||
+        Number.isNaN(safeLat) ||
+        Number.isNaN(safeLng)
+      )
+        return;
+
+      // ✅ Di chuyển bản đồ đến vị trí
+      map.flyTo([safeLat, safeLng], zoom, { animate: true, duration: 1 });
+
+      // ✅ Hiển thị marker chính
       if (singleMarker) {
-        if (markerRef.current) {
-          map.removeLayer(markerRef.current);
-        }
-        markerRef.current = L.marker([lat, lng]).addTo(map);
+        if (markerRef.current) map.removeLayer(markerRef.current);
+        markerRef.current = L.marker([safeLat, safeLng]).addTo(map);
       }
 
-      // ✅ Nếu có danh sách points → hiển thị thêm marker phụ
+      // ✅ Hiển thị danh sách marker phụ
       points.forEach((p) => {
-        if (!p.lat || !p.lng) return;
-        const marker = L.marker([p.lat, p.lng]).addTo(map);
+        const pLat = parseFloat(p.lat);
+        const pLng = parseFloat(p.lng);
+        if (Number.isNaN(pLat) || Number.isNaN(pLng)) return;
+
+        // tránh trùng với marker chính
+        if (singleMarker && pLat === safeLat && pLng === safeLng) return;
+
+        const marker = L.marker([pLat, pLng]).addTo(map);
         marker.bindPopup(`<b>${p.name || "Vị trí"}</b>`);
       });
     })();

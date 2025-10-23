@@ -15,11 +15,11 @@ export default function Sidebar() {
   return (
     <aside className="fixed left-0 top-[70px] h-[calc(100vh-70px)] w-56 bg-white border-r border-gray-200 shadow-sm z-40">
       {/* Logo */}
-      <div className="flex items-center justify-center py-4 border-b border-gray-100">
+      {/* <div className="flex items-center justify-center py-4 border-b border-gray-100">
         <h1 className="text-xl font-bold text-[#003366] cursor-pointer">
           📘 DayThem<span className="text-yellow-400">.com</span>
         </h1>
-      </div>
+      </div> */}
 
       {/* Menu */}
       <nav className="mt-4 flex flex-col">

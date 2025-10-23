@@ -118,6 +118,27 @@ export default function Step2() {
                     </label>
                   ))}
                 </div>
+                {/* Độ tuổi */}
+                <label className="block font-semibold mb-1 mt-4">
+                  Độ tuổi:
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    className="border p-2 w-24 rounded-lg"
+                    placeholder="Từ"
+                    value={requirements.ageMin}
+                    onChange={(e) => handleChange("ageMin", e.target.value)}
+                  />
+                  <span>-</span>
+                  <input
+                    type="number"
+                    className="border p-2 w-24 rounded-lg"
+                    placeholder="Đến"
+                    value={requirements.ageMax}
+                    onChange={(e) => handleChange("ageMax", e.target.value)}
+                  />
+                </div>
               </div>
 
               {/* Cột 2 */}

@@ -13,10 +13,8 @@ export default function Step4() {
   const [days, setDays] = useState([]);
   const [timeRange, setTimeRange] = useState({ from: "18:00", to: "20:00" });
   const [loading, setLoading] = useState(false);
+  const [step3Data, setStep3Data] = useState(null);
 
-  const [step3Data, setStep3Data] = useState(null); // ✅ hiển thị địa chỉ
-
-  // ✅ Load lại dữ liệu Step4 khi quay lại
   useEffect(() => {
     const saved4 = localStorage.getItem("classStep4");
     if (saved4) {
@@ -30,7 +28,6 @@ export default function Step4() {
       }
     }
 
-    // ✅ Load dữ liệu Step3 để hiển thị xác nhận khu vực học
     const saved3 = localStorage.getItem("classStep3");
     if (saved3) {
       try {
@@ -42,7 +39,6 @@ export default function Step4() {
     }
   }, []);
 
-  // ✅ Tự động lưu mỗi khi thay đổi
   useEffect(() => {
     localStorage.setItem(
       "classStep4",
@@ -50,7 +46,6 @@ export default function Step4() {
     );
   }, [weeks, days, timeRange]);
 
-  // ✅ Chuyển bước trước
   const prevStep = () => {
     localStorage.setItem(
       "classStep4",
@@ -59,34 +54,40 @@ export default function Step4() {
     router.push("/dashboard/create-class/Step3");
   };
 
-  // ✅ Gửi dữ liệu lên server
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      // Lưu lại dữ liệu hiện tại
       localStorage.setItem(
         "classStep4",
         JSON.stringify({ weeks, days, timeRange })
       );
 
-      // Lấy dữ liệu từ các bước trước
       const step1 = JSON.parse(localStorage.getItem("classStep1") || "{}");
       const step2 = JSON.parse(localStorage.getItem("classStep2") || "{}");
       const step3 = JSON.parse(localStorage.getItem("classStep3") || "{}");
 
-      // Kiểm tra dữ liệu bắt buộc
       if (!step1.subject || !step1.grade) {
         alert("⚠️ Thiếu thông tin môn học hoặc lớp học!");
         setLoading(false);
         return;
       }
 
-      // Chuẩn bị payload
+      // ✅ Gộp đầy đủ dữ liệu từ Step1, Step2, Step3, Step4
       const payload = {
         subject: step1.subject,
         grade: step1.grade,
+        schedule: JSON.stringify({ weeks, days, timeRange }),
         tuition_amount: Number(step2.fee) || 0,
-        schedule: { weeks, days, timeRange },
+
+        // 🧠 Thêm các trường yêu cầu người dạy
+        teacher_gender: step2.gender?.join(", ") || "Không yêu cầu",
+        age_range:
+          step2.ageRange || `${step2.ageMin || 18}-${step2.ageMax || 60}`,
+        education_level: step2.education || "Không yêu cầu",
+        experience: step2.experience || "Không yêu cầu",
+        description: step2.bio || "",
+
+        // 🗺️ Địa chỉ
         lat: Number(step3.lat) || 10.762622,
         lng: Number(step3.lng) || 106.660172,
         city: step3.city || "Hồ Chí Minh",
@@ -100,7 +101,6 @@ export default function Step4() {
       const res = await api.post("/classes", payload);
       alert(res.data.message || "✅ Đăng lớp thành công!");
 
-      // Xoá dữ liệu tạm
       ["classStep1", "classStep2", "classStep3", "classStep4"].forEach((k) =>
         localStorage.removeItem(k)
       );
@@ -129,7 +129,6 @@ export default function Step4() {
 
             <h2 className="text-2xl font-semibold mb-6">🕒 Chọn lịch học</h2>
 
-            {/* ✅ Hiển thị địa chỉ xác nhận từ Step3 */}
             {step3Data && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm">
                 <p className="font-semibold mb-1">📍 Khu vực dạy:</p>
@@ -146,7 +145,6 @@ export default function Step4() {
               </div>
             )}
 
-            {/* Chọn số tuần */}
             <div className="mb-6">
               <label className="font-semibold">Số tuần học:</label>
               <div className="flex gap-4 mt-2 flex-wrap">
@@ -166,7 +164,6 @@ export default function Step4() {
               </div>
             </div>
 
-            {/* Chọn ngày học */}
             <div className="mb-6">
               <label className="font-semibold">Ngày học trong tuần:</label>
               <div className="grid grid-cols-4 md:grid-cols-7 gap-2 mt-2">
@@ -189,7 +186,6 @@ export default function Step4() {
               </div>
             </div>
 
-            {/* Chọn thời gian */}
             <div className="mb-6">
               <label className="font-semibold">Thời gian học:</label>
               <div className="flex items-center gap-3 mt-2">

@@ -16,7 +16,7 @@ export default function SidebarTutor() {
   return (
     <aside className="fixed top-0 left-0 w-56 bg-white border-r border-gray-200 h-screen pt-[80px] shadow-sm z-40">
       {/* --- Logo --- */}
-      <div className="flex flex-col items-center pb-4 border-b border-gray-100">
+      {/* <div className="flex flex-col items-center pb-4 border-b border-gray-100">
         <img
           src="/logo-daythem.png"
           alt="DayThem Logo"
@@ -25,7 +25,7 @@ export default function SidebarTutor() {
         <h2 className="text-lg font-bold text-[#003366]">
           DayThem<span className="text-yellow-500">.com</span>
         </h2>
-      </div>
+      </div> */}
 
       {/* --- Menu --- */}
       <nav className="mt-4">
