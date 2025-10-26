@@ -1,5 +1,5 @@
-import SidebarTutor from "../../../components/SidebarTutor";
-import TopbarTutor from "../../../components/TopbarTutor";
+import SidebarTutor from "../../components/SidebarTutor";
+import TopbarTutor from "../../components/TopbarTutor";
 
 export default function TutorClasses() {
   return (
