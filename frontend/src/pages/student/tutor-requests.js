@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
-import Sidebar from "../../components/Sidebar";
+import SidebarStudent from "../../components/SidebarStudent";
 import TopbarStudent from "../../components/TopbarStudent";
 
 export default function TutorRequests() {
@@ -20,7 +20,7 @@ export default function TutorRequests() {
   // 🧩 Gửi phản hồi đến backend
   async function handleRespond(id, status) {
     try {
-      const res = await api.put(`/requests/${id}/respond`, { status });
+      const res = await api.get("/requests");
       alert(res.data.message);
 
       setRequests((prev) =>
@@ -48,7 +48,7 @@ export default function TutorRequests() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      <SidebarStudent />
       <div className="flex-1">
         <TopbarStudent />
         <div className="mt-20"></div>

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import api from "../../utils/api";
-import Sidebar from "../../components/Sidebar";
+import SidebarStudent from "../../components/SidebarStudent";
 import Footer from "../../components/Footer";
 import SidebarToggle from "../../components/SidebarToggle";
 import dynamic from "next/dynamic";
 import TopbarStudent from "../../components/TopbarStudent";
 
+// ⚙️ Bản đồ được load động (client-side)
 const MapWrapper = dynamic(() => import("../../components/MapWrapper"), {
   ssr: false,
 });
@@ -42,10 +43,35 @@ export default function StudentDashboard() {
     fetchTutors(subject);
   };
 
+  // 🧠 Debug: kiểm tra dữ liệu tọa độ của tutors
+  useEffect(() => {
+    if (tutors.length > 0) {
+      console.log(
+        "🗺️ Tutors hiển thị bản đồ:",
+        tutors.map((t) => ({
+          id: t.tutor_id,
+          name: t.full_name,
+          lat: t.lat,
+          lng: t.lng,
+        }))
+      );
+    }
+  }, [tutors]);
+
+  // ⚙️ Lọc các tutor có tọa độ hợp lệ để truyền vào bản đồ
+  const validTutors = tutors.filter(
+    (t) =>
+      t.lat &&
+      t.lng &&
+      !Number.isNaN(parseFloat(t.lat)) &&
+      !Number.isNaN(parseFloat(t.lng))
+  );
+
   return (
     <div>
+      {/* Sidebar & Topbar */}
       <div className="desktop-only">
-        <Sidebar />
+        <SidebarStudent />
       </div>
 
       <div className="mobile-only">
@@ -56,9 +82,11 @@ export default function StudentDashboard() {
         <TopbarStudent />
       </div>
 
+      {/* Nội dung chính */}
       <div className="main-content p-6">
         <h2 className="text-2xl font-bold mb-4">👩‍🏫 Danh sách gia sư</h2>
 
+        {/* Ô tìm kiếm */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <input
             type="text"
@@ -75,10 +103,12 @@ export default function StudentDashboard() {
           </button>
         </div>
 
+        {/* Danh sách gia sư + Bản đồ */}
         <div
           className="content-wrapper"
           style={{ display: "flex", gap: "20px" }}
         >
+          {/* Danh sách gia sư */}
           <div className="tutor-list" style={{ flex: 1 }}>
             {loading ? (
               <p>⏳ Đang tải danh sách gia sư...</p>
@@ -119,11 +149,13 @@ export default function StudentDashboard() {
             )}
           </div>
 
+          {/* Bản đồ (Desktop) */}
           <div className="map-container desktop-only" style={{ flex: 1 }}>
-            <MapWrapper role="student" tutors={tutors} />
+            <MapWrapper role="student" tutors={validTutors} />
           </div>
         </div>
 
+        {/* Bản đồ (Mobile) */}
         <div className="mobile-only">
           <button
             className="floating-map-btn bg-blue-600 text-white px-5 py-2 rounded-lg mt-4"
@@ -141,7 +173,7 @@ export default function StudentDashboard() {
                 ✖ Đóng
               </button>
               <div className="h-full w-full mt-10">
-                <MapWrapper role="student" tutors={tutors} />
+                <MapWrapper role="student" tutors={validTutors} />
               </div>
             </div>
           )}

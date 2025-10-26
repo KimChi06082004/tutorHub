@@ -5,6 +5,7 @@ import TopbarStudent from "../../../components/TopbarStudent";
 import Footer from "../../../components/Footer";
 import StepProgress from "./components/StepProgress";
 import FormNavButtons from "./components/FormNavButtons";
+import SidebarStudent from "../../../components/SidebarStudent";
 
 export default function Step1() {
   const router = useRouter();
@@ -42,14 +43,14 @@ export default function Step1() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+    <div className="flex min-h-screen bg-gray-50 ">
+      <SidebarStudent />
       <div className="flex-1 flex flex-col">
         <TopbarStudent />
-        <main className="flex-1 p-6 md:p-10">
-          <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow p-8">
+        <main className="flex-1 p-6 md:p-10 ">
+          <div className="max-w-5xl  mx-auto bg-white rounded-2xl shadow p-8">
             <StepProgress current={1} />
-            <h2 className="text-2xl font-semibold mb-6">
+            <h2 className="text-2xl font-semibold mb-6  mt-5px">
               Tạo lớp đăng tuyển - Tại nhà
             </h2>
 

@@ -68,7 +68,7 @@ router.post("/", verifyToken, requireRoles("student"), async (req, res) => {
       scheduleData,
       finalTuition,
       "PRIVATE",
-      "PENDING_ADMIN_APPROVAL",
+      "PENDING",
       finalLat,
       finalLng,
       city || "Hồ Chí Minh",
@@ -439,6 +439,21 @@ router.put("/:id/cancel", verifyToken, async (req, res) => {
       .json({ success: false, message: err.sqlMessage || err.message });
   }
 });
+// 🧭 Lấy lớp đã đăng
+router.get("/mine", verifyToken, async (req, res) => {
+  try {
+    const studentId = req.user.user_id;
+    const [rows] = await pool.query(
+      "SELECT class_id, subject, tuition_amount, city, status FROM classes WHERE student_id = ?",
+      [studentId]
+    );
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error("❌ Get student classes error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // 🧭 Lấy lớp kế tiếp (tự động bỏ qua lớp không tồn tại)
 router.get("/next/:id", async (req, res) => {
   try {

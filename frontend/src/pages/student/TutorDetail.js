@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import api from "../../utils/api";
-import Sidebar from "../../components/Sidebar";
+import SidebarStudent from "../../components/SidebarStudent";
 import Footer from "../../components/Footer";
 import TopbarStudent from "../../components/TopbarStudent";
 import dynamic from "next/dynamic";
-import { IoArrowBackOutline } from "react-icons/io5";
-
-// Map chỉ render phía client
+import { IoArrowBackOutline, IoArrowForwardOutline } from "react-icons/io5";
+import Link from "next/link";
 const VietnamMap = dynamic(() => import("../../components/VietnamMap"), {
   ssr: false,
 });
@@ -18,64 +17,114 @@ export default function TutorDetail() {
 
   const [tutor, setTutor] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isRequested, setIsRequested] = useState(false); // ✅ trạng thái nút gửi
+  const [isRequested, setIsRequested] = useState(false);
+  const [classes, setClasses] = useState([]);
+  const [selectedClass, setSelectedClass] = useState(null);
+  const [allTutors, setAllTutors] = useState([]);
 
-  // Lấy thông tin gia sư
+  // 🔹 Lấy danh sách tất cả tutor để biết id kế tiếp
+  useEffect(() => {
+    const fetchAllTutors = async () => {
+      try {
+        const res = await api.get("/tutors");
+        setAllTutors(res.data.data || []);
+      } catch (err) {
+        console.error("❌ Lỗi tải danh sách gia sư:", err);
+      }
+    };
+    fetchAllTutors();
+  }, []);
+
   useEffect(() => {
     if (!id) return;
+
     const fetchTutor = async () => {
       try {
         const res = await api.get(`/tutors/${id}`);
-        setTutor(res.data);
+        setTutor(res.data.data);
       } catch (err) {
         console.error("❌ Lỗi tải hồ sơ gia sư:", err);
       } finally {
         setLoading(false);
       }
     };
+
+    const fetchStudentClasses = async () => {
+      try {
+        const res = await api.get("/classes/mine");
+        const all = res.data.data || [];
+        const validClasses = all.filter((c) =>
+          [
+            "PENDING_ADMIN_APPROVAL",
+            "APPROVED_VISIBLE",
+            "ONGOING",
+            "ACTIVE",
+          ].includes(c.status)
+        );
+        setClasses(validClasses);
+      } catch (err) {
+        console.error("❌ Lỗi tải lớp học:", err);
+      }
+    };
+
+    const checkRequest = async () => {
+      try {
+        const res = await api.get("/requests");
+        const exists = res.data.data?.some(
+          (r) => r.tutor_id === Number(id) && r.status === "PENDING"
+        );
+        setIsRequested(exists);
+      } catch (err) {
+        console.error("❌ Lỗi kiểm tra yêu cầu:", err);
+      }
+    };
+
     fetchTutor();
+    fetchStudentClasses();
+    checkRequest();
   }, [id]);
+
+  // ✅ Chuyển đến CV kế tiếp
+  const handleNextTutor = () => {
+    if (!tutor || allTutors.length === 0) return;
+
+    const currentIndex = allTutors.findIndex(
+      (t) => t.tutor_id === tutor.tutor_id
+    );
+    const nextIndex = (currentIndex + 1) % allTutors.length;
+    const nextTutor = allTutors[nextIndex];
+
+    if (nextTutor?.tutor_id) {
+      router.push(`/student/TutorDetail?id=${nextTutor.tutor_id}`);
+    }
+  };
 
   // ✅ Gửi yêu cầu học
   const handleSendRequest = async () => {
-    const token =
-      localStorage.getItem("accessToken") ||
-      localStorage.getItem("token") ||
-      localStorage.getItem("authToken");
-
-    if (!token) {
-      alert("⚠️ Bạn cần đăng nhập để gửi yêu cầu học!");
+    if (!selectedClass) {
+      alert("⚠️ Vui lòng chọn lớp học bạn đã đăng!");
       return;
     }
 
     try {
-      const res = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api"
-        }/requests`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            tutor_id: tutor.tutor_id,
-            subject: tutor.subject || "Chưa xác định",
-            message: "Tôi muốn học với gia sư này.",
-          }),
-        }
-      );
+      const payload = {
+        class_id: selectedClass.class_id,
+        tutor_id: tutor.tutor_id,
+        subject: selectedClass.subject || tutor.subject || "Chưa xác định",
+        message: `Tôi muốn mời gia sư ${tutor.full_name} dạy lớp ${selectedClass.class_id}.`,
+      };
 
-      const data = await res.json();
-      if (data.success) {
+      const res = await api.post("/requests", payload);
+
+      if (res.data.success) {
         alert("✅ Đã gửi yêu cầu học thành công!");
         setIsRequested(true);
       } else {
-        alert("❌ " + data.message);
+        alert("❌ " + (res.data.message || "Không gửi được yêu cầu!"));
       }
     } catch (err) {
-      alert("🚨 Lỗi hệ thống: " + err.message);
+      console.error("❌ Lỗi gửi yêu cầu:", err);
+      alert(err.response?.data?.message || "🚨 Lỗi hệ thống!");
     }
   };
 
@@ -86,36 +135,44 @@ export default function TutorDetail() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
       <div className="hidden md:block">
-        <Sidebar />
+        <SidebarStudent />
       </div>
 
-      {/* Nội dung chính */}
       <div className="flex-1 flex flex-col">
         <TopbarStudent />
-
-        {/* Thêm margin-top để không bị Topbar che */}
         <main className="flex-1 p-6 md:p-10 mt-[80px]">
           <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-md p-8 relative">
-            {/* ===== Hàng ngang gồm mũi tên - avatar - nút gửi ===== */}
-            <div className="flex flex-col md:flex-row items-center justify-between border-b pb-6 mb-6">
-              {/* Mũi tên quay lại */}
+            {/* Header */}
+            <div className="flex flex-col items-center border-b pb-6 mb-6 relative">
+              {/* Quay lại */}
               <button
                 onClick={() => router.back()}
-                className="flex items-center text-gray-600 hover:text-blue-600 transition mb-4 md:mb-0"
-                title="Quay lại"
+                className="absolute left-6 top-6 flex items-center text-gray-600 hover:text-blue-600 transition"
               >
                 <IoArrowBackOutline size={22} className="mr-1" />
                 <span className="text-sm font-medium">Quay lại</span>
               </button>
 
-              {/* Ảnh đại diện + thông tin */}
-              <div className="flex flex-col items-center text-center">
+              {/* Mũi tên tới */}
+              <button
+                onClick={handleNextTutor}
+                className="absolute right-6 top-6 flex items-center text-gray-600 hover:text-blue-600 transition"
+                title="Xem gia sư kế tiếp"
+              >
+                <IoArrowForwardOutline size={22} />
+                <span className="text-sm font-medium">Kế tiếp </span>
+              </button>
+
+              <div className="flex flex-col items-center text-center mt-2">
                 <img
-                  src={tutor.avatar || "/avatars/default-tutor.png"}
+                  src={
+                    tutor.avatar && tutor.avatar !== "null"
+                      ? tutor.avatar
+                      : "/default-avatar.png"
+                  }
                   alt="Tutor Avatar"
-                  className="w-28 h-28 rounded-full object-cover border-2 border-blue-400 shadow-md"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-blue-400 shadow-lg mx-auto"
                 />
                 <h2 className="text-2xl font-semibold text-gray-800 mt-3">
                   {tutor.full_name}
@@ -130,23 +187,68 @@ export default function TutorDetail() {
                   ⭐ {tutor.rating || "5.0"} ({tutor.total_reviews || 0} đánh
                   giá)
                 </p>
-              </div>
 
-              {/* Nút gửi yêu cầu học */}
-              {isRequested ? (
-                <button
-                  disabled
-                  className="bg-gray-400 text-white px-6 py-2 rounded-lg shadow mt-4 md:mt-0 cursor-not-allowed"
-                >
-                  ✅ Đã gửi yêu cầu
-                </button>
+                {isRequested ? (
+                  <button
+                    disabled
+                    className="bg-gray-400 text-white px-6 py-2 rounded-lg shadow mt-4 cursor-not-allowed"
+                  >
+                    ✅ Đã gửi yêu cầu
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSendRequest}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow mt-4 transition"
+                  >
+                    Gửi yêu cầu học
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* ✅ Chọn lớp học */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-3 text-gray-800 border-l-4 border-orange-500 pl-2">
+                🎯 Chọn lớp học bạn đã đăng
+              </h3>
+
+              {classes.length === 0 ? (
+                <p className="text-gray-500 italic">
+                  Bạn chưa có lớp học hợp lệ để gửi yêu cầu.{" "}
+                  <Link
+                    href="/dashboard/create-class"
+                    className="text-blue-600 underline"
+                  >
+                    ➕ Tạo lớp mới
+                  </Link>
+                </p>
               ) : (
-                <button
-                  onClick={handleSendRequest}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow transition mt-4 md:mt-0"
-                >
-                  Gửi yêu cầu học
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {classes.map((c) => (
+                    <div
+                      key={c.class_id}
+                      onClick={() => setSelectedClass(c)}
+                      className={`border rounded-xl p-4 cursor-pointer transition ${
+                        selectedClass?.class_id === c.class_id
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-blue-300"
+                      }`}
+                    >
+                      <p className="font-semibold text-gray-800">
+                        🏷️ Mã lớp: {c.class_id}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        📘 Môn học: {c.subject}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        💵 {c.tuition_amount?.toLocaleString()} đ/giờ
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        📍 {c.city || "Chưa rõ khu vực"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
@@ -161,9 +263,7 @@ export default function TutorDetail() {
                     🎓 Trình độ: {tutor.education_level || "Chưa cập nhật"}
                   </li>
                   <li>📚 Chuyên ngành: {tutor.major || "Chưa cập nhật"}</li>
-                  <li>
-                    🏫 Trường theo học: {tutor.university || "Chưa cập nhật"}
-                  </li>
+                  <li>🏫 Trường: {tutor.university || "Chưa cập nhật"}</li>
                   <li>💼 Kinh nghiệm: {tutor.experience || "Chưa cập nhật"}</li>
                   <li>
                     💸 Học phí:{" "}
@@ -178,49 +278,78 @@ export default function TutorDetail() {
 
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-gray-800">
-                  🗺️ Địa chỉ và chứng chỉ
+                  🗺️ Địa chỉ
                 </h3>
                 <div className="w-full h-52 rounded-lg overflow-hidden border mb-2">
                   <VietnamMap
-                    lat={tutor.lat || 10.75}
-                    lng={tutor.lng || 106.65}
+                    lat={
+                      !isNaN(parseFloat(tutor.lat))
+                        ? parseFloat(tutor.lat)
+                        : 10.75
+                    }
+                    lng={
+                      !isNaN(parseFloat(tutor.lng))
+                        ? parseFloat(tutor.lng)
+                        : 106.65
+                    }
                     zoom={13}
-                    singleMarker={{
-                      avatar: tutor.avatar,
-                      name: tutor.full_name,
-                    }}
+                    singleMarker={true}
                   />
                 </div>
-                <p className="text-sm text-gray-700">
-                  🎓 Bằng cấp:{" "}
-                  {tutor.degree_url ? (
-                    <a
-                      href={tutor.degree_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      Xem chứng chỉ
-                    </a>
-                  ) : (
-                    "Chưa có chứng chỉ."
-                  )}
+              </div>
+              {/* Giới thiệu bản thân */}
+              <div className="mt-4">
+                <h4 className="font-semibold text-gray-800 mb-1">
+                  🧾 Giới thiệu bản thân
+                </h4>
+                <p className="text-sm text-gray-700 bg-white p-3 rounded-md border">
+                  {tutor.bio ||
+                    "Gia sư chưa cập nhật phần giới thiệu bản thân."}
                 </p>
               </div>
-            </div>
 
-            {/* Mô tả thêm */}
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                📝 Mô tả thêm
-              </h3>
-              <p className="text-gray-700 text-sm bg-gray-50 border rounded-lg p-3">
-                {tutor.bio || "Chưa có mô tả."}
-              </p>
+              {/* Chứng chỉ */}
+              <div className="mt-4">
+                <h4 className="font-semibold text-gray-800 mb-2">
+                  🎓 Chứng chỉ
+                </h4>
+
+                {tutor.certificates ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {(Array.isArray(tutor.certificates)
+                      ? tutor.certificates
+                      : typeof tutor.certificates === "string"
+                      ? tutor.certificates.split(",")
+                      : []
+                    )
+                      .map((url, idx) => url.trim())
+                      .filter((url) => url)
+                      .map((url, idx) => (
+                        <div key={idx} className="flex flex-col items-center">
+                          <img
+                            src={
+                              url.startsWith("http")
+                                ? url
+                                : `http://localhost:8080${url}`
+                            }
+                            alt={`Chứng chỉ ${idx + 1}`}
+                            className="rounded-lg border shadow-sm w-full h-48 object-cover hover:scale-105 transition-transform"
+                          />
+                          <span className="text-xs text-gray-600 mt-1">
+                            Chứng chỉ #{idx + 1}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">
+                    Chưa cập nhật chứng chỉ.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </main>
-
         <Footer />
       </div>
     </div>

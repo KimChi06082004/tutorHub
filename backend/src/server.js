@@ -19,6 +19,7 @@ import notificationRoutes from "./routes/notifications.js";
 import ratingRoutes from "./routes/ratings.js";
 import uploadRoutes from "./routes/upload.js";
 import requestRoutes from "./routes/requests.js";
+import tutorSelectedRouter from "./routes/tutorSelected.js";
 dotenv.config();
 
 const app = express();
@@ -36,6 +37,8 @@ if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
 // ✅ Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/requests", requestRoutes);
+
 app.use("/api/tutors", tutorRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/sessions", sessionRoutes);
@@ -47,7 +50,7 @@ app.use("/api/complaints", complaintRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/ratings", ratingRoutes);
 app.use("/api/upload", uploadRoutes);
-app.use("/api/requests", requestRoutes);
+app.use("/api/tutor/selected-classes", tutorSelectedRouter);
 // ✅ Static file (ảnh upload)
 app.use("/uploads", express.static("uploads"));
 

@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import api from "../utils/api";
 import { setAuthUser } from "../utils/auth";
 import Link from "next/link";
-
+import Image from "next/image";
 export default function Register() {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -21,47 +21,53 @@ export default function Register() {
         const { user, token } = res.data;
         setAuthUser(user, token);
 
-        // Redirect theo role
         if (user.role === "admin") router.push("/dashboard/admin");
         else if (user.role === "tutor") router.push("/dashboard/tutor");
         else if (user.role === "accountant")
           router.push("/dashboard/accountant");
         else router.push("/dashboard/student");
       } else {
-        alert(res.data.message || "Register failed");
+        alert(res.data.message || "Đăng ký thất bại!");
       }
     } catch (err) {
       console.error("Register error:", err);
-      alert("Register failed, please try again!");
+      alert("Lỗi kết nối máy chủ, vui lòng thử lại!");
     }
   };
 
   return (
     <div className="register-page">
-      <div className="register-card">
-        <h2>📝 Đăng ký tài khoản</h2>
+      <Image
+        src="/logo-daythem.png"
+        alt="DạyThêm.com Logo"
+        width={300}
+        height={300}
+        className="logo"
+      />
+      <div className="form-card">
+        <h2>ĐĂNG KÝ TÀI KHOẢN </h2>
         <p className="subtitle">
-          Tham gia ngay để bắt đầu hành trình học tập của bạn!
+          Tham gia để bắt đầu hành trình học tập và chia sẻ tri thức!
         </p>
 
         <form onSubmit={handleSubmit} className="form">
           <input
             type="text"
-            placeholder="Họ và tên"
+            placeholder="👤 Họ và tên"
             value={form.full_name}
             onChange={(e) => setForm({ ...form, full_name: e.target.value })}
             required
           />
           <input
             type="email"
-            placeholder="Email"
+            placeholder="📧 Email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             required
           />
           <input
             type="password"
-            placeholder="Mật khẩu"
+            placeholder="🔒 Mật khẩu"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             required
@@ -75,84 +81,127 @@ export default function Register() {
           </select>
 
           <button type="submit" className="btn-register">
-            Đăng ký
+            🚀 Đăng ký ngay
           </button>
         </form>
 
         <p className="login-link">
-          Đã có tài khoản? <Link href="/login/">Đăng nhập</Link>
+          Đã có tài khoản? <Link href="/login">Đăng nhập</Link>
         </p>
       </div>
 
       <style jsx>{`
         .register-page {
           min-height: 100vh;
-          background: linear-gradient(135deg, #4f46e5, #06b6d4);
           display: flex;
-          justify-content: center;
-          align-items: center;
-          padding: 20px;
+          flex-direction: column;
+          justify-content: center; /* canh giữa theo chiều dọc */
+          align-items: center; /* canh giữa theo chiều ngang */
+          background: #f9fafb;
           font-family: "Inter", sans-serif;
+          padding: 0; /* loại bỏ padding thừa */
+          margin: 0;
         }
 
-        .register-card {
-          background: white;
-          border-radius: 16px;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-          padding: 40px 30px;
-          max-width: 400px;
-          width: 100%;
+        .brand {
           text-align: center;
+          margin-bottom: 8px; /* khoảng cách nhỏ giữa logo và form */
+        }
+
+        .logo {
+          width: 240px; /* logo to hơn, đẹp hơn */
+          height: auto;
+          margin-bottom: 4px; /* gần slogan hơn */
+        }
+
+        .form-card {
+          margin-top: -100px;
+          background: white;
+          border-radius: 20px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+          padding: 35px 30px;
+          width: 100%;
+          max-width: 420px;
+          text-align: center;
+          animation: fadeInUp 0.8s ease;
+        }
+
+        .brand h1 {
+          font-size: 2rem;
+          font-weight: 800;
+          color: #1e293b;
+        }
+
+        .highlight {
+          color: #4f46e5;
+        }
+
+        .tagline {
+          font-size: 14px;
+          color: #64748b;
+          margin-top: 0;
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         h2 {
           color: #1e293b;
-          margin-bottom: 8px;
+          margin-bottom: 10px;
         }
 
         .subtitle {
           color: #64748b;
-          font-size: 14px;
+          font-size: 15px;
           margin-bottom: 24px;
         }
 
         .form {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 14px;
         }
 
         input,
         select {
           padding: 12px;
           border: 1px solid #e2e8f0;
-          border-radius: 8px;
+          border-radius: 10px;
           font-size: 15px;
-          transition: border 0.2s, box-shadow 0.2s;
+          background: #f8fafc;
+          transition: 0.25s;
         }
 
         input:focus,
         select:focus {
-          outline: none;
-          border-color: #4f46e5;
-          box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+          border-color: #6366f1;
+          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+          background: #fff;
         }
 
         .btn-register {
-          margin-top: 8px;
           background: linear-gradient(90deg, #4f46e5, #06b6d4);
-          border: none;
-          color: white;
+          color: #fff;
           font-weight: 600;
           padding: 12px;
-          border-radius: 8px;
+          border-radius: 10px;
+          border: none;
+          margin-top: 10px;
           cursor: pointer;
           transition: 0.3s;
         }
 
         .btn-register:hover {
-          opacity: 0.9;
-          transform: translateY(-1px);
+          opacity: 0.95;
+          transform: scale(1.03);
         }
 
         .login-link {
@@ -172,8 +221,11 @@ export default function Register() {
         }
 
         @media (max-width: 480px) {
-          .register-card {
+          .form-card {
             padding: 30px 20px;
+          }
+          .brand h1 {
+            font-size: 1.6rem;
           }
         }
       `}</style>

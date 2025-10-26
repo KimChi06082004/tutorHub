@@ -6,6 +6,7 @@ import Footer from "../../../components/Footer";
 import StepProgress from "./components/StepProgress";
 import FormNavButtons from "./components/FormNavButtons";
 import api from "../../../utils/api";
+import SidebarStudent from "../../../components/SidebarStudent";
 
 export default function Step4() {
   const router = useRouter();
@@ -120,7 +121,7 @@ export default function Step4() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      <SidebarStudent />
       <div className="flex-1 flex flex-col">
         <TopbarStudent />
         <main className="flex-1 p-6 md:p-10">

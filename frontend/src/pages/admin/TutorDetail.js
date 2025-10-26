@@ -1,8 +1,12 @@
 // frontend/src/pages/admin/TutorDetail.js
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import Sidebar from "../../components/Sidebar";
-import TopbarTutor from "../../components/TopbarTutor";
+import TopbarAdmin from "../../components/TopbarAdmin";
+import dynamic from "next/dynamic";
+
+const VietnamMap = dynamic(() => import("../../components/VietnamMap"), {
+  ssr: false,
+});
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
@@ -12,47 +16,81 @@ export default function TutorDetail() {
   const { id } = router.query;
   const [tutor, setTutor] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reason, setReason] = useState("");
+  const [token, setToken] = useState(null);
 
-  // 🔹 Gọi API lấy chi tiết hồ sơ
   useEffect(() => {
-    if (!id) return;
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("accessToken") ||
-          localStorage.getItem("token") ||
-          localStorage.getItem("authToken")
-        : null;
+    const t =
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("authToken");
+    setToken(t);
+  }, []);
 
+  useEffect(() => {
+    if (!id || !token) return;
     fetch(`${API_BASE}/tutors/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => {
-        setTutor(data);
-        setLoading(false);
+        if (data.success) setTutor(data.data);
+        else alert("❌ Không tìm thấy hồ sơ!");
       })
-      .catch((err) => {
-        console.error("Fetch tutor error:", err);
-        setLoading(false);
+      .catch((err) => console.error("Fetch tutor error:", err))
+      .finally(() => setLoading(false));
+  }, [id, token]);
+
+  const handleAction = async (action) => {
+    if (action === "reject" && !reason.trim()) {
+      alert("⚠️ Vui lòng nhập lý do từ chối!");
+      return;
+    }
+
+    const endpoint =
+      action === "approve" ? `/tutors/${id}/approve` : `/tutors/${id}/reject`;
+
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: action === "reject" ? JSON.stringify({ reason }) : null,
       });
-  }, [id]);
+
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message);
+        router.push("/dashboard/admin");
+      } else {
+        alert("❌ " + (data.message || "Thao tác thất bại!"));
+      }
+    } catch (err) {
+      alert("🚨 Lỗi server!");
+    }
+  };
 
   if (loading) return <p className="text-center mt-20">⏳ Đang tải hồ sơ...</p>;
   if (!tutor)
-    return <p className="text-center mt-20">❌ Không tìm thấy hồ sơ!</p>;
+    return (
+      <p className="text-center mt-20 text-red-500">❌ Không tìm thấy hồ sơ!</p>
+    );
 
-  // ✅ Xử lý chứng chỉ dạng JSON string
+  // ✅ Parse chứng chỉ JSON
   let certList = [];
   try {
-    certList = JSON.parse(tutor.certificates || "[]");
+    certList = Array.isArray(tutor.certificates)
+      ? tutor.certificates
+      : JSON.parse(tutor.certificates || "[]");
   } catch {
     certList = [];
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar />
-      <TopbarTutor />
+      <TopbarAdmin />
 
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-8 mt-10">
         <button
@@ -62,20 +100,18 @@ export default function TutorDetail() {
           ◀ Quay lại
         </button>
 
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800">
-          🧾 Chi tiết hồ sơ gia sư #{tutor.tutor_id}
+        <h2 className="text-2xl font-semibold mb-6 text-gray-800 text-center">
+          🧾 Hồ sơ chi tiết của {tutor.full_name}
         </h2>
 
-        {/* Thông tin cá nhân */}
-        <div className="flex flex-col md:flex-row gap-8">
+        {/* 1️⃣ Thông tin cơ bản */}
+        <div className="flex flex-col md:flex-row gap-8 mb-8">
           <div className="flex flex-col items-center w-full md:w-1/3">
-            <div className="w-36 h-36 rounded-full overflow-hidden border border-blue-300 shadow-md">
-              <img
-                src={tutor.avatar}
-                alt="avatar"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <img
+              src={tutor.avatar || "/default-avatar.png"}
+              alt="avatar"
+              className="w-36 h-36 rounded-full object-cover border shadow-md"
+            />
             <p className="mt-3 font-semibold text-lg text-gray-800">
               {tutor.full_name}
             </p>
@@ -83,9 +119,20 @@ export default function TutorDetail() {
               {tutor.education_level} – {tutor.major}
             </p>
             <p className="text-gray-500 text-sm">{tutor.university}</p>
+            <span
+              className={`mt-2 px-2 py-1 rounded text-white text-xs ${
+                tutor.status === "PENDING"
+                  ? "bg-yellow-500"
+                  : tutor.status === "APPROVED"
+                  ? "bg-green-600"
+                  : "bg-red-500"
+              }`}
+            >
+              {tutor.status}
+            </span>
           </div>
 
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700">
             <div>
               <strong>Ngày sinh:</strong>{" "}
               {tutor.birth_date
@@ -93,70 +140,67 @@ export default function TutorDetail() {
                 : "Chưa có"}
             </div>
             <div>
-              <strong>Trạng thái:</strong>{" "}
-              <span
-                className={`px-2 py-1 rounded text-white ${
-                  tutor.status === "PENDING"
-                    ? "bg-yellow-500"
-                    : tutor.status === "APPROVED"
-                    ? "bg-green-600"
-                    : "bg-red-500"
-                }`}
-              >
-                {tutor.status}
-              </span>
+              <strong>Giới tính:</strong> {tutor.gender || "—"}
+            </div>
+            <div>
+              <strong>Thành phố:</strong> {tutor.city || "—"}
+            </div>
+            <div>
+              <strong>Học phí:</strong>{" "}
+              {tutor.hourly_rate
+                ? `${tutor.hourly_rate.toLocaleString()} đ/giờ`
+                : "Thoả thuận"}
             </div>
             <div className="sm:col-span-2">
-              <strong>Giới thiệu:</strong>
-              <p className="border rounded-md p-3 mt-2 bg-gray-50">
-                {tutor.bio || "Chưa có mô tả"}
-              </p>
+              <strong>Môn nhận dạy:</strong> {tutor.subject || "Chưa cập nhật"}
             </div>
           </div>
         </div>
 
-        {/* CCCD */}
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold text-gray-700 mb-3">
+        {/* 2️⃣ Mô tả thêm */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-2 text-gray-700">
+            📝 Giới thiệu & Kinh nghiệm
+          </h3>
+          <p className="border rounded-md p-3 bg-gray-50 text-sm">
+            {tutor.bio || tutor.experience || "Chưa có mô tả."}
+          </p>
+        </div>
+
+        {/* 3️⃣ Ảnh CCCD */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-700">
             🪪 Ảnh CCCD
           </h3>
           <div className="flex gap-6 flex-wrap">
             {[tutor.cccd_front, tutor.cccd_back].map(
-              (img, idx) =>
+              (img, i) =>
                 img && (
-                  <div
-                    key={idx}
-                    className="w-48 h-32 border rounded-lg overflow-hidden shadow-sm"
-                  >
-                    <img
-                      src={img}
-                      alt={`CCCD ${idx === 0 ? "Trước" : "Sau"}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                  <img
+                    key={i}
+                    src={img}
+                    alt={`CCCD ${i === 0 ? "Trước" : "Sau"}`}
+                    className="w-48 h-32 object-cover rounded-lg border"
+                  />
                 )
             )}
           </div>
         </div>
 
-        {/* Chứng chỉ */}
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold text-gray-700 mb-3">
+        {/* 4️⃣ Chứng chỉ */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-700">
             🎓 Chứng chỉ / Bằng cấp
           </h3>
           {certList.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {certList.map((url, i) => (
-                <div
+                <img
                   key={i}
-                  className="w-40 h-40 rounded-lg border overflow-hidden shadow-sm"
-                >
-                  <img
-                    src={url}
-                    alt={`Certificate ${i + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                  src={url}
+                  alt={`Chứng chỉ ${i + 1}`}
+                  className="w-full h-40 object-cover rounded-lg border"
+                />
               ))}
             </div>
           ) : (
@@ -164,72 +208,46 @@ export default function TutorDetail() {
           )}
         </div>
 
-        {/* Thông tin học vấn và kinh nghiệm */}
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold text-gray-700 mb-3">
-            📚 Học vấn & Kinh nghiệm
+        {/* 5️⃣ Bản đồ */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-700">
+            🗺️ Vị trí dạy
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
-            <div>
-              <strong>Trường:</strong> {tutor.university || "—"}
-            </div>
-            <div>
-              <strong>Ngành học:</strong> {tutor.major || "—"}
-            </div>
-            <div className="sm:col-span-2">
-              <strong>Kinh nghiệm:</strong>
-              <p className="border rounded-md p-3 mt-2 bg-gray-50">
-                {tutor.experience || "Chưa có"}
-              </p>
-            </div>
+          <div className="w-full h-64 rounded-lg overflow-hidden border">
+            <VietnamMap
+              lat={tutor.lat || 10.762622}
+              lng={tutor.lng || 106.660172}
+              zoom={13}
+              singleMarker
+            />
           </div>
         </div>
 
-        {/* Thao tác duyệt */}
-        <div className="flex gap-4 mt-10">
-          <button
-            onClick={() =>
-              fetch(`${API_BASE}/tutors/${tutor.tutor_id}/approve`, {
-                method: "PUT",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${
-                    localStorage.getItem("accessToken") ||
-                    localStorage.getItem("token")
-                  }`,
-                },
-                body: JSON.stringify({ status: "APPROVED" }),
-              }).then(() => {
-                alert("✅ Đã duyệt hồ sơ!");
-                router.push("/dashboard/admin");
-              })
-            }
-            className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg"
-          >
-            ✅ Duyệt hồ sơ
-          </button>
+        {/* 6️⃣ Thao tác duyệt */}
+        <div className="mt-10 border-t pt-6">
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Nhập lý do từ chối (nếu có)..."
+            className="w-full border rounded-md p-3 mb-4 text-sm"
+            rows={3}
+          ></textarea>
 
-          <button
-            onClick={() =>
-              fetch(`${API_BASE}/tutors/${tutor.tutor_id}/approve`, {
-                method: "PUT",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${
-                    localStorage.getItem("accessToken") ||
-                    localStorage.getItem("token")
-                  }`,
-                },
-                body: JSON.stringify({ status: "REJECTED" }),
-              }).then(() => {
-                alert("❌ Hồ sơ đã bị từ chối!");
-                router.push("/dashboard/admin");
-              })
-            }
-            className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg"
-          >
-            ❌ Từ chối
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={() => handleAction("approve")}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg"
+            >
+              ✅ Duyệt hồ sơ
+            </button>
+
+            <button
+              onClick={() => handleAction("reject")}
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg"
+            >
+              ❌ Từ chối hồ sơ
+            </button>
+          </div>
         </div>
       </div>
     </div>

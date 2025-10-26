@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../../utils/api";
+import api from "../../utils/api"; //
 import { FaEye, FaMapMarkerAlt, FaTrashAlt } from "react-icons/fa";
 
 export default function ClassApprovals() {
@@ -238,7 +238,9 @@ export default function ClassApprovals() {
 
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               {/* ✅ Chỉ hiển thị Duyệt / Từ chối khi lớp chưa xử lý */}
-              {["PENDING_ADMIN_APPROVAL"].includes(selected.status) && (
+              {["PENDING_ADMIN_APPROVAL", "PENDING"].includes(
+                selected.status
+              ) && (
                 <>
                   <button
                     onClick={() => handleApprove(selected.class_id)}

@@ -1,12 +1,12 @@
 import express from "express";
 import { pool } from "../config/db.js";
-import { verifyToken } from "../middlewares/auth.js";
+import { verifyToken, requireRole } from "../middlewares/auth.js";
 
 const router = express.Router();
 
-/**
- * 🧩 GỬI YÊU CẦU HỌC HOẶC DẠY (student ↔ tutor)
- */
+/* =========================================================
+   📨 GỬI YÊU CẦU HỌC HOẶC DẠY (student ↔ tutor)
+========================================================= */
 router.post("/", verifyToken, async (req, res) => {
   try {
     const { class_id, message, tutor_id: inputTutorId } = req.body || {};
@@ -17,10 +17,7 @@ router.post("/", verifyToken, async (req, res) => {
         .status(400)
         .json({ success: false, message: "Thiếu thông tin lớp học." });
 
-    console.log("🧩 Body nhận được:", req.body);
-    console.log("👤 Role:", role, "| UserID:", user_id);
-
-    // Lấy thông tin lớp
+    // 🔍 Lấy thông tin lớp
     const [classRows] = await pool.query(
       "SELECT student_id, subject FROM classes WHERE class_id=?",
       [class_id]
@@ -32,53 +29,62 @@ router.post("/", verifyToken, async (req, res) => {
 
     const { student_id, subject } = classRows[0];
 
-    let sender_role, receiver_id, tutor_id, studentId;
+    let sender_role, tutor_id, studentId, receiver_id;
 
-    // 📘 Nếu người gửi là học viên → gửi yêu cầu học đến tutor
     if (role === "student") {
+      // 🎯 Học viên gửi yêu cầu học → Gia sư
       sender_role = "student";
       studentId = user_id;
-      tutor_id = inputTutorId || null;
-      receiver_id = tutor_id;
+      tutor_id = inputTutorId;
 
       if (!tutor_id)
-        return res.status(400).json({
-          success: false,
-          message: "Thiếu tutor_id để gửi yêu cầu học.",
-        });
-    }
-    // 👨‍🏫 Nếu người gửi là gia sư → gửi yêu cầu dạy đến học viên
-    else if (role === "tutor") {
+        return res
+          .status(400)
+          .json({ success: false, message: "Thiếu tutor_id." });
+
+      receiver_id = tutor_id; // người nhận thông báo là tutor
+    } else if (role === "tutor") {
+      // 🎯 Gia sư gửi yêu cầu dạy → Học viên
       sender_role = "tutor";
-      tutor_id = user_id;
       studentId = student_id;
-      receiver_id = student_id;
+
+      // ✅ Lấy tutor_id thật từ bảng tutors
+      const [tRows] = await pool.query(
+        "SELECT tutor_id FROM tutors WHERE user_id=?",
+        [user_id]
+      );
+      if (!tRows.length)
+        return res
+          .status(400)
+          .json({ success: false, message: "Bạn chưa có hồ sơ gia sư." });
+      tutor_id = tRows[0].tutor_id;
+
+      receiver_id = student_id; // người nhận thông báo là student
     } else {
-      return res.status(403).json({
-        success: false,
-        message: "Chỉ tutor hoặc student mới được gửi yêu cầu.",
-      });
+      return res
+        .status(403)
+        .json({ success: false, message: "Không có quyền gửi yêu cầu." });
     }
 
-    // 🔎 Kiểm tra trùng yêu cầu đang chờ
+    // 🔁 Kiểm tra trùng
     const [exist] = await pool.query(
       "SELECT * FROM requests WHERE student_id=? AND tutor_id=? AND class_id=? AND status='PENDING'",
       [studentId, tutor_id, class_id]
     );
-    if (exist.length > 0)
+    if (exist.length)
       return res.json({
         success: false,
         message: "❗ Yêu cầu này đã tồn tại, vui lòng chờ phản hồi.",
       });
 
-    // 📨 Tạo yêu cầu mới
+    // 📨 Tạo mới
     await pool.query(
       `INSERT INTO requests (student_id, tutor_id, class_id, subject, message, status)
        VALUES (?, ?, ?, ?, ?, 'PENDING')`,
-      [studentId, tutor_id, class_id, subject || "", message || ""]
+      [studentId, tutor_id, class_id, subject, message || ""]
     );
 
-    // 🛎️ Gửi thông báo
+    // 🔔 Gửi thông báo
     await pool.query(
       `INSERT INTO notifications (user_id, title, message, type)
        VALUES (?, ?, ?, 'REQUEST')`,
@@ -100,27 +106,163 @@ router.post("/", verifyToken, async (req, res) => {
   }
 });
 
-/**
- * 🧩 XEM DANH SÁCH YÊU CẦU (theo role)
- */
+/* =========================================================
+   ✏️ GIA SƯ ỨNG TUYỂN LỚP
+========================================================= */
+router.post("/apply", verifyToken, requireRole(["tutor"]), async (req, res) => {
+  try {
+    const { class_id, message } = req.body;
+    const user_id = req.user.user_id;
+
+    // ✅ Lấy tutor_id
+    const [tRows] = await pool.query(
+      "SELECT tutor_id, status FROM tutors WHERE user_id=?",
+      [user_id]
+    );
+    if (!tRows.length)
+      return res.status(400).json({
+        success: false,
+        message: "Bạn cần hoàn thiện hồ sơ gia sư trước khi ứng tuyển.",
+      });
+
+    const { tutor_id, status } = tRows[0];
+    if (status !== "APPROVED")
+      return res.status(400).json({
+        success: false,
+        message:
+          "❗ Hồ sơ gia sư của bạn chưa được duyệt, không thể ứng tuyển.",
+      });
+
+    // ✅ Lấy thông tin lớp
+    const [cls] = await pool.query(
+      "SELECT student_id, subject FROM classes WHERE class_id=?",
+      [class_id]
+    );
+    if (!cls.length)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy lớp học." });
+
+    const { student_id, subject } = cls[0];
+
+    // ✅ Kiểm tra trùng
+    const [dup] = await pool.query(
+      "SELECT * FROM requests WHERE class_id=? AND tutor_id=? AND status='PENDING'",
+      [class_id, tutor_id]
+    );
+    if (dup.length)
+      return res
+        .status(400)
+        .json({ success: false, message: "Bạn đã ứng tuyển lớp này rồi!" });
+
+    // ✅ Thêm request
+    await pool.query(
+      `INSERT INTO requests (student_id, tutor_id, class_id, subject, message, status)
+       VALUES (?, ?, ?, ?, ?, 'PENDING')`,
+      [student_id, tutor_id, class_id, subject, message || ""]
+    );
+
+    // ✅ Thông báo học viên
+    await pool.query(
+      `INSERT INTO notifications (user_id, title, message, type)
+       VALUES (?, 'Gia sư ứng tuyển', 'Một gia sư vừa ứng tuyển lớp của bạn.', 'REQUEST')`,
+      [student_id]
+    );
+
+    res.json({ success: true, message: "✅ Ứng tuyển lớp thành công!" });
+  } catch (err) {
+    console.error("❌ Tutor apply error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/* =========================================================
+   👨‍🏫 GIA SƯ CHẤP NHẬN / TỪ CHỐI YÊU CẦU HỌC VIÊN
+========================================================= */
+router.put("/:id", verifyToken, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const user_id = req.user.user_id;
+    const request_id = req.params.id;
+
+    if (!["APPROVED", "REJECTED"].includes(status))
+      return res
+        .status(400)
+        .json({ success: false, message: "Trạng thái không hợp lệ." });
+
+    // ✅ Lấy tutor_id
+    const [tutorRows] = await pool.query(
+      "SELECT tutor_id FROM tutors WHERE user_id=?",
+      [user_id]
+    );
+    if (!tutorRows.length)
+      return res
+        .status(400)
+        .json({ success: false, message: "Không tìm thấy hồ sơ gia sư." });
+    const tutor_id = tutorRows[0].tutor_id;
+
+    const [reqRows] = await pool.query(
+      "SELECT class_id, student_id FROM requests WHERE request_id=?",
+      [request_id]
+    );
+    if (!reqRows.length)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy yêu cầu này." });
+
+    const { class_id, student_id } = reqRows[0];
+
+    await pool.query(
+      "UPDATE requests SET status=? WHERE request_id=? AND tutor_id=?",
+      [status, request_id, tutor_id]
+    );
+
+    if (status === "APPROVED") {
+      await pool.query(
+        "UPDATE classes SET tutor_id=?, status='ASSIGNED' WHERE class_id=?",
+        [tutor_id, class_id]
+      );
+    }
+
+    await pool.query(
+      `INSERT INTO notifications (user_id, title, message, type)
+       VALUES (?, ?, ?, 'REQUEST')`,
+      [
+        student_id,
+        status === "APPROVED"
+          ? "Gia sư đã chấp nhận yêu cầu học"
+          : "Gia sư đã từ chối yêu cầu học",
+        status === "APPROVED"
+          ? "Gia sư đã đồng ý nhận dạy lớp của bạn."
+          : "Gia sư đã từ chối lời mời học của bạn.",
+      ]
+    );
+
+    res.json({
+      success: true,
+      message: `✅ Yêu cầu đã được ${
+        status === "APPROVED" ? "chấp nhận" : "từ chối"
+      }.`,
+    });
+  } catch (err) {
+    console.error("❌ Tutor respond error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 router.get("/", verifyToken, async (req, res) => {
   try {
     const { role, user_id } = req.user;
-    let query, params;
 
-    if (role === "tutor") {
+    let query, params;
+    if (role === "student") {
       query = `
-        SELECT r.*, u.full_name AS student_name, u.email
-        FROM requests r
-        JOIN users u ON r.student_id = u.user_id
-        WHERE r.tutor_id=? ORDER BY r.created_at DESC`;
+        SELECT * FROM requests WHERE student_id = ? ORDER BY created_at DESC
+      `;
       params = [user_id];
-    } else if (role === "student") {
+    } else if (role === "tutor") {
       query = `
-        SELECT r.*, u.full_name AS tutor_name, u.email
-        FROM requests r
-        JOIN users u ON r.tutor_id = u.user_id
-        WHERE r.student_id=? ORDER BY r.created_at DESC`;
+        SELECT * FROM requests WHERE tutor_id = ? ORDER BY created_at DESC
+      `;
       params = [user_id];
     } else {
       return res
@@ -131,99 +273,6 @@ router.get("/", verifyToken, async (req, res) => {
     const [rows] = await pool.query(query, params);
     res.json({ success: true, data: rows });
   } catch (err) {
-    console.error("❌ Get requests error:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-/**
- * 🧩 TUTOR CHẤP NHẬN / TỪ CHỐI YÊU CẦU
- */
-router.put("/:id", verifyToken, async (req, res) => {
-  try {
-    const { status } = req.body;
-    const tutor_id = req.user.user_id;
-    const request_id = req.params.id;
-
-    if (!["APPROVED", "REJECTED"].includes(status))
-      return res
-        .status(400)
-        .json({ success: false, message: "Trạng thái không hợp lệ." });
-
-    const [result] = await pool.query(
-      "UPDATE requests SET status=? WHERE request_id=? AND tutor_id=?",
-      [status, request_id, tutor_id]
-    );
-
-    if (result.affectedRows === 0)
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy yêu cầu hoặc bạn không có quyền cập nhật.",
-      });
-
-    res.json({
-      success: true,
-      message: `✅ Yêu cầu đã được ${
-        status === "APPROVED" ? "chấp nhận" : "từ chối"
-      }.`,
-    });
-  } catch (err) {
-    console.error("❌ Tutor update error:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-/**
- * 🧩 STUDENT CHẤP NHẬN / TỪ CHỐI GIA SƯ ỨNG TUYỂN
- */
-router.put("/:id/respond", verifyToken, async (req, res) => {
-  try {
-    const { status } = req.body;
-    const student_id = req.user.user_id;
-    const request_id = req.params.id;
-
-    if (!["APPROVED", "REJECTED"].includes(status))
-      return res
-        .status(400)
-        .json({ success: false, message: "Trạng thái không hợp lệ." });
-
-    const [result] = await pool.query(
-      "UPDATE requests SET status=? WHERE request_id=? AND student_id=?",
-      [status, request_id, student_id]
-    );
-
-    if (result.affectedRows === 0)
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy yêu cầu phù hợp hoặc không có quyền cập nhật.",
-      });
-
-    // Gửi thông báo cho tutor
-    await pool.query(
-      `INSERT INTO notifications (user_id, title, message, type)
-       VALUES (
-         (SELECT tutor_id FROM requests WHERE request_id=?),
-         ?, ?, 'REQUEST'
-       )`,
-      [
-        request_id,
-        status === "APPROVED"
-          ? "Yêu cầu dạy đã được chấp nhận"
-          : "Yêu cầu dạy đã bị từ chối",
-        status === "APPROVED"
-          ? "Học viên đã chấp nhận bạn dạy lớp của họ."
-          : "Học viên đã từ chối lời mời dạy của bạn.",
-      ]
-    );
-
-    res.json({
-      success: true,
-      message: `✅ Bạn đã ${
-        status === "APPROVED" ? "chấp nhận" : "từ chối"
-      } lời mời dạy.`,
-    });
-  } catch (err) {
-    console.error("❌ Student respond error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 });

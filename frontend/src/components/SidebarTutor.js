@@ -14,7 +14,7 @@ export default function SidebarTutor() {
   ];
 
   return (
-    <aside className="fixed top-0 left-0 w-56 bg-white border-r border-gray-200 h-screen pt-[80px] shadow-sm z-40">
+    <aside className="fixed top-0 left-0 w-64 bg-white border-r border-gray-200 h-screen pt-[80px] shadow-sm z-40">
       {/* --- Logo --- */}
       {/* <div className="flex flex-col items-center pb-4 border-b border-gray-100">
         <img

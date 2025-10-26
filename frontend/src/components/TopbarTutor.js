@@ -68,7 +68,7 @@ export default function TopbarTutor() {
                     Lớp đã ứng tuyển
                   </Link>
                   <Link
-                    href="/tutor/classes/accepted"
+                    href="/tutor/SelectedClasses"
                     className="block px-4 py-2 hover:bg-[#0059b3]"
                     onClick={() => setOpenMenu(null)}
                   >

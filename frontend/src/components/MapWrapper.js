@@ -1,45 +1,36 @@
 // frontend/src/components/MapWrapper.js
-import { useEffect, useState } from "react";
 import VietnamMap from "./VietnamMap";
-import { createAvatarMarker } from "./AvatarMarker";
-import api from "../utils/api";
 
-export default function MapWrapper({ role = "tutor" }) {
-  const [users, setUsers] = useState([]);
+export default function MapWrapper({
+  role = "student",
+  tutors = [],
+  students = [],
+}) {
+  // ✅ Xác định tập dữ liệu hiển thị
+  const users = role === "tutor" ? students : tutors;
 
-  // ✅ Lấy dữ liệu từ API
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Gia sư → xem học viên | Học viên → xem gia sư
-        const endpoint = role === "tutor" ? "tutors/students" : "tutors";
-        console.log("🔍 endpoint:", endpoint);
-        console.log("🔍 full URL:", api.defaults.baseURL + endpoint);
+  // ✅ Tạo danh sách điểm hiển thị trên bản đồ
+  const points = (users || [])
+    .filter(
+      (u) =>
+        u.lat &&
+        u.lng &&
+        !Number.isNaN(parseFloat(u.lat)) &&
+        !Number.isNaN(parseFloat(u.lng))
+    )
+    .map((u) => ({
+      lat: parseFloat(u.lat),
+      lng: parseFloat(u.lng),
+      name: u.full_name || "Người dùng",
+    }));
 
-        const res = await api.get(endpoint);
-        // ✅ Backend trả về { success, data }
-        setUsers(res.data.data || []);
-      } catch (err) {
-        console.error("❌ Lỗi tải dữ liệu bản đồ:", err);
-      }
-    };
-    fetchData();
-  }, [role]);
-
-  // ✅ Khi bản đồ sẵn sàng, thêm avatar vào
-  const handleMapReady = (map) => {
-    if (!map || !users.length) return;
-
-    users.forEach((user) => {
-      const lat = user.lat || 10.75 + Math.random() * 3;
-      const lng = user.lng || 106.65 + Math.random() * 3;
-      const avatar = user.avatar || "/avatars/default-student.png";
-      const name = user.full_name || "Người dùng";
-
-      const marker = createAvatarMarker({ lat, lng, avatar, name });
-      marker.addTo(map);
-    });
-  };
-
-  return <VietnamMap onMapReady={handleMapReady} />;
+  return (
+    <VietnamMap
+      lat={points[0]?.lat || 14.0583} // fallback: trung tâm VN
+      lng={points[0]?.lng || 108.2772}
+      zoom={6}
+      points={points}
+      singleMarker={false}
+    />
+  );
 }

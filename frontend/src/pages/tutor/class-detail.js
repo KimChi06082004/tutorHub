@@ -1,42 +1,61 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
-import Sidebar from "../../components/Sidebar";
+import SidebarTutor from "../../components/SidebarTutor";
 import TopbarTutor from "../../components/TopbarTutor";
 import dynamic from "next/dynamic";
 
-// Bản đồ leaflet (chỉ chạy ở client)
+// 🗺️ Bản đồ leaflet (render client-only)
 const MapBase = dynamic(() => import("../../components/MapBase"), {
   ssr: false,
 });
 
 export default function ClassDetailTutor() {
-  const [hasNext, setHasNext] = useState(true);
   const router = useRouter();
-  const { id: classId } = router.query; // ✅ Đổi tên rõ ràng
+  const { id: classId } = router.query;
+
   const [classData, setClassData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasNext, setHasNext] = useState(false);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Gọi API lấy chi tiết lớp
+
+  /* =========================================================
+     ⚙️ Lấy dữ liệu chi tiết lớp + lớp kế tiếp
+  ========================================================= */
   useEffect(() => {
     if (!classId) return;
-    api
-      .get(`/classes/${classId}`)
-      .then((res) => setClassData(res.data.data))
-      .catch((err) => console.error("❌ Lỗi tải lớp:", err))
-      .finally(() => setLoading(false));
 
-    // 🔍 Kiểm tra có lớp kế tiếp không
-    api
-      .get(`/classes/next/${classId}`)
-      .then(() => setHasNext(true))
-      .catch(() => setHasNext(false));
+    const fetchClass = async () => {
+      try {
+        const res = await api.get(`/classes/${classId}`);
+        setClassData(res.data.data);
+      } catch (err) {
+        console.error("❌ Lỗi tải lớp:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const checkNext = async () => {
+      try {
+        await api.get(`/classes/next/${classId}`);
+        setHasNext(true);
+      } catch {
+        setHasNext(false);
+      }
+    };
+
+    fetchClass();
+    checkNext();
   }, [classId]);
 
-  if (loading) return <p className="text-center mt-10">Đang tải dữ liệu...</p>;
+  if (loading)
+    return <p className="text-center mt-10">⏳ Đang tải dữ liệu...</p>;
   if (!classData)
-    return <p className="text-center mt-10">Không tìm thấy lớp.</p>;
+    return (
+      <p className="text-center mt-10 text-red-500">Không tìm thấy lớp.</p>
+    );
 
   const {
     full_name,
@@ -60,43 +79,84 @@ export default function ClassDetailTutor() {
   const safeLat = lat || 10.7769;
   const safeLng = lng || 106.7009;
 
-  // ✅ Gửi yêu cầu dạy
+  /* =========================================================
+     📨 GỬI YÊU CẦU ỨNG TUYỂN DẠY
+  ========================================================= */
   const handleApply = async () => {
+    setIsSubmitting(true);
+
+    const payload = {
+      class_id: classId,
+      message: message || "Tôi muốn ứng tuyển lớp này.",
+    };
+
+    console.log("📦 Gửi API /requests/apply:", payload);
+
     try {
-      // 🟡 Vô hiệu hóa nút ngay khi bắt đầu gửi
-      setIsSubmitting(true);
-
-      console.log("📦 Payload gửi backend:", {
-        class_id: classId,
-        message: message || "Tôi muốn ứng tuyển lớp này.",
+      const res = await api.post("/requests/apply", payload).catch((err) => {
+        // ✅ chặn axios báo lỗi "unhandled rejection"
+        throw err.response || err;
       });
 
-      const res = await api.post("/requests", {
-        class_id: classId,
-        message: message || "Tôi muốn ứng tuyển lớp này.",
-      });
+      // ✅ Kiểm tra phản hồi từ backend
+      if (res?.data?.success) {
+        alert(res.data.message || "✅ Đã gửi yêu cầu dạy lớp thành công!");
+        return;
+      }
 
-      alert(res.data?.message || "✅ Đã gửi yêu cầu dạy lớp thành công!");
-    } catch (err) {
-      console.error("❌ Gửi yêu cầu thất bại:", err);
-      alert("❌ Gửi yêu cầu thất bại!");
+      const msg = res?.data?.message || "⚠️ Gửi yêu cầu thất bại!";
+      console.warn("⚠️ Thông báo backend:", msg);
+
+      if (
+        msg.includes("hồ sơ") ||
+        msg.includes("CV") ||
+        msg.includes("duyệt hồ sơ")
+      ) {
+        alert("⚠️ Bạn cần hoàn thiện hồ sơ trước khi ứng tuyển lớp!");
+        await router.push("/tutor/update-cv");
+        return;
+      }
+
+      if (msg.includes("ứng tuyển lớp này rồi")) {
+        alert("❌ Bạn đã ứng tuyển lớp này rồi!");
+        return;
+      }
+
+      alert(`⚠️ ${msg}`);
+    } catch (error) {
+      console.error("❌ Lỗi gửi yêu cầu:", error);
+
+      const msg =
+        error?.data?.message || error?.message || "Không thể gửi yêu cầu dạy.";
+
+      // Nếu lỗi là do hồ sơ
+      if (
+        msg.includes("hồ sơ") ||
+        msg.includes("CV") ||
+        msg.includes("duyệt hồ sơ")
+      ) {
+        alert("⚠️ Bạn cần hoàn thiện hồ sơ trước khi ứng tuyển lớp!");
+        await router.push("/tutor/update-cv");
+        return;
+      }
+
+      // Nếu lỗi khác
+      alert(`❌ ${msg}`);
     } finally {
-      // 🔒 Giữ nút bị disable sau khi gửi xong
       setIsSubmitting(false);
     }
   };
 
+  /* =========================================================
+     🎨 Giao diện trang chi tiết lớp
+  ========================================================= */
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      <SidebarTutor />
       <div className="flex-1">
         <TopbarTutor />
-
-        {/* tránh bị topbar che */}
-        <div className="mt-20"></div>
-
-        {/* ================= HEADER LỚP ================= */}
-        {/* ❌ Bỏ nền màu xanh -> đổi bg-white + viền nhẹ */}
+        <div className="mt-20" /> {/* tránh bị che */}
+        {/* ================= HEADER ================= */}
         <div className="bg-white py-6 relative shadow-sm rounded-b-xl border-b border-gray-200">
           <div className="max-w-5xl mx-auto flex items-center justify-between px-6 relative">
             <button
@@ -129,7 +189,7 @@ export default function ClassDetailTutor() {
               <p className="text-xs text-gray-500 mt-1">Truy cập gần đây</p>
             </div>
 
-            {/* ➡ Đến lớp kế tiếp */}
+            {/* Nút chuyển lớp kế tiếp */}
             <button
               disabled={!hasNext}
               onClick={async () => {
@@ -142,11 +202,8 @@ export default function ClassDetailTutor() {
                     setHasNext(false);
                   }
                 } catch (err) {
-                  if (err.response?.status === 404) {
-                    setHasNext(false);
-                  } else {
-                    console.error("❌ Lỗi khi lấy lớp kế tiếp:", err);
-                  }
+                  if (err.response?.status === 404) setHasNext(false);
+                  else console.error("❌ Lỗi lấy lớp kế tiếp:", err);
                 }
               }}
               className={`${
@@ -159,8 +216,7 @@ export default function ClassDetailTutor() {
             </button>
           </div>
         </div>
-
-        {/* ================= NỘI DUNG CHI TIẾT ================= */}
+        {/* ================= NỘI DUNG ================= */}
         <div className="max-w-5xl mx-auto p-6">
           {/* ====== YÊU CẦU TUYỂN CHỌN ====== */}
           <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
@@ -186,14 +242,12 @@ export default function ClassDetailTutor() {
               </p>
             </div>
 
-            {/* Mô tả chi tiết */}
             <div className="bg-gray-100 p-4 rounded-lg text-gray-700 mb-5 leading-relaxed">
               <b>Mô tả:</b>{" "}
               {description ||
                 "Chưa có mô tả cụ thể về yêu cầu của học viên đối với gia sư."}
             </div>
 
-            {/* Học phí ứng tuyển */}
             <div className="bg-orange-500 text-white font-semibold rounded-lg flex justify-between items-center p-4 text-lg shadow-md">
               <span>Học phí ứng tuyển</span>
               <span>
@@ -217,12 +271,11 @@ export default function ClassDetailTutor() {
             </div>
           </div>
 
-          {/* ====== LỊCH MINH HỌA ====== */}
+          {/* ====== LỊCH HỌC ====== */}
           <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
             <h3 className="text-xl font-semibold mb-3 text-blue-700">
               Lịch học
             </h3>
-
             <p className="text-gray-600 mb-4">
               {schedule
                 ? (() => {
@@ -293,7 +346,7 @@ export default function ClassDetailTutor() {
                   : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
               } text-white font-semibold px-8 py-3 rounded-lg shadow-md transition`}
             >
-              {isSubmitting ? "⏳ Đang gửi..." : " Gửi yêu cầu dạy"}
+              {isSubmitting ? "⏳ Đang gửi..." : "📩 Gửi yêu cầu dạy"}
             </button>
           </div>
         </div>

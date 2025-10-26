@@ -7,6 +7,7 @@ import Footer from "../../../components/Footer";
 import StepProgress from "./components/StepProgress";
 import FormNavButtons from "./components/FormNavButtons";
 import rawData from "../../../utils/vietnam-provinces.json";
+import SidebarStudent from "../../../components/SidebarStudent";
 
 // ✅ Chuẩn hoá JSON dạng object → mảng
 const normalizeData = (data) => {
@@ -147,7 +148,7 @@ export default function Step3() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      <SidebarStudent />
       <div className="flex-1 flex flex-col">
         <TopbarStudent />
         <main className="flex-1 p-6 md:p-10">
