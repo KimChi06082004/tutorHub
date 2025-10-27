@@ -776,4 +776,38 @@ router.get("/payment/paid", verifyToken, async (req, res) => {
   }
 });
 
+// ✅ Lấy danh sách lớp đã kết thúc (cho tutor)
+router.get(
+  "/tutor/completed",
+  verifyToken,
+  requireRole(["tutor"]),
+  async (req, res) => {
+    try {
+      const tutorId = req.user.user_id;
+
+      const [rows] = await pool.query(
+        `
+      SELECT 
+        c.class_id, c.subject, c.grade, c.address, 
+        c.tuition_amount, c.completed_at, 
+        u.full_name AS student_name
+      FROM classes c
+      JOIN users u ON u.user_id = c.student_id
+      WHERE c.selected_tutor_id = (
+        SELECT tutor_id FROM tutors WHERE user_id = ?
+      )
+      AND c.status = 'DONE'
+      ORDER BY c.completed_at DESC
+      `,
+        [tutorId]
+      );
+
+      res.json({ success: true, data: rows });
+    } catch (err) {
+      console.error("❌ Get completed tutor classes error:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+);
+
 export default router;
