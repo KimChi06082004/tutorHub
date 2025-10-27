@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import api from "../../utils/api";
-import SidebarTutor from "../../components/SidebarTutor";
-import TopbarTutor from "../../components/TopbarTutor";
-import Footer from "../../components/Footer";
+import api from "../../../utils/api";
+import SidebarTutor from "../../../components/SidebarTutor";
+import TopbarTutor from "../../../components/TopbarTutor";
+import Footer from "../../../components/Footer";
 
 export default function TutorPaid() {
   const [classes, setClasses] = useState([]);
