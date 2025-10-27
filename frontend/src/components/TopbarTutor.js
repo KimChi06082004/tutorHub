@@ -31,7 +31,7 @@ export default function TopbarTutor() {
           {/* LOGO */}
           <div
             className="flex items-center cursor-pointer select-none ml-2"
-            onClick={() => router.push("/tutor/dashboard")}
+            onClick={() => router.push("/tutor/classes/active")}
           >
             <img
               src="/logo-daythem.png"
@@ -89,7 +89,7 @@ export default function TopbarTutor() {
               {openMenu === "payment" && (
                 <div className="absolute left-0 bg-[#004080] text-white rounded-md mt-1 w-56 shadow-md">
                   <Link
-                    href="/tutor/payments"
+                    href="/tutor/payments/payments"
                     className="block px-4 py-2 hover:bg-[#0059b3]"
                     onClick={() => setOpenMenu(null)}
                   >
@@ -131,7 +131,7 @@ export default function TopbarTutor() {
                     📅 Lịch dạy học
                   </Link>
                   <Link
-                    href="/tutor/schedule/completed"
+                    href="/tutor/classes/completed"
                     className="block px-4 py-2 hover:bg-[#0059b3]"
                     onClick={() => setOpenMenu(null)}
                   >
