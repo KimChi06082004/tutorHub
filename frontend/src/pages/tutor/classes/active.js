@@ -224,15 +224,20 @@ export default function ActiveClasses() {
                         📧 {cls.student_email}
                       </p>
                       <p className="text-sm text-gray-600">
-                        <b>🏠Địa chỉ:</b>{" "}
-                        {[
-                          selected.address,
-                          selected.ward && `Phường ${selected.ward}`,
-                          selected.district && `Quận ${selected.district}`,
-                          selected.city && `TP. ${selected.city}`,
-                        ]
-                          .filter(Boolean)
-                          .join(", ")}
+                        <p>
+                          <b>🏠 Địa chỉ:</b>{" "}
+                          {selected
+                            ? [
+                                selected.address || "",
+                                selected.ward && `Phường ${selected.ward}`,
+                                selected.district &&
+                                  `Quận ${selected.district}`,
+                                selected.city && `TP. ${selected.city}`,
+                              ]
+                                .filter(Boolean)
+                                .join(", ")
+                            : "Chưa có thông tin"}
+                        </p>
                       </p>
                       <p className="text-sm text-gray-500">
                         Trạng thái:{" "}
