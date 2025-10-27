@@ -55,7 +55,10 @@ router.get("/", verifyToken, requireRole(["tutor"]), async (req, res) => {
 });
 
 /* ============================================================
-   ✅ Gia sư chấp nhận lời mời học
+   ✅ Gia sư chấp nhận lời mời học → CẬP NHẬT lớp sang CẦN THANH TOÁN
+============================================================ */
+/* ============================================================
+   ✅ Gia sư chấp nhận lời mời học → CẬP NHẬT lớp sang CẦN THANH TOÁN
 ============================================================ */
 router.post(
   "/:request_id/accept",
@@ -67,72 +70,109 @@ router.post(
       const { request_id } = req.params;
       const user_id = req.user.user_id;
 
-      // 🔹 Lấy tutor_id thực tế từ bảng tutors
+      console.log("🟡 Tutor Accept Debug:", { request_id, user_id });
+
+      // 1️⃣ Lấy tutor_id thật
       const [tutorRows] = await conn.query(
         "SELECT tutor_id FROM tutors WHERE user_id = ?",
         [user_id]
       );
-      if (!tutorRows.length) {
-        return res.status(400).json({
-          success: false,
-          message: "Không tìm thấy hồ sơ gia sư tương ứng.",
-        });
-      }
+      if (!tutorRows.length)
+        return res
+          .status(400)
+          .json({ success: false, message: "Không tìm thấy hồ sơ gia sư." });
+
       const tutor_id = tutorRows[0].tutor_id;
 
-      // 🔹 Lấy class_id từ request
+      // 2️⃣ Lấy thông tin request & lớp
       const [reqRows] = await conn.query(
-        "SELECT class_id FROM requests WHERE request_id = ?",
-        [request_id]
+        "SELECT class_id, student_id FROM requests WHERE request_id = ? AND tutor_id = ?",
+        [request_id, tutor_id]
       );
-      if (!reqRows.length) {
+      if (!reqRows.length)
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy yêu cầu phù hợp cho gia sư này.",
+        });
+
+      const { class_id, student_id } = reqRows[0];
+
+      // 3️⃣ Lấy thông tin lớp để tính toán
+      const [classRows] = await conn.query(
+        "SELECT tuition_amount FROM classes WHERE class_id = ?",
+        [class_id]
+      );
+      if (!classRows.length)
         return res
           .status(404)
-          .json({ success: false, message: "Không tìm thấy yêu cầu này." });
-      }
-      const class_id = reqRows[0].class_id;
+          .json({ success: false, message: "Không tìm thấy lớp học." });
 
-      // 🔹 Bắt đầu transaction để đảm bảo tính toàn vẹn
+      const tuition = Number(classRows[0].tuition_amount) || 0;
+
+      // 4️⃣ Transaction bắt đầu
       await conn.beginTransaction();
 
-      // 1️⃣ Cập nhật trạng thái request
+      // 🟢 Cập nhật trạng thái request
       await conn.query(
         "UPDATE requests SET status = 'APPROVED' WHERE request_id = ?",
         [request_id]
       );
 
-      // 2️⃣ Gắn tutor vào lớp
+      // 🟢 Cập nhật lớp → Cần thanh toán
+      const weeks = 1; // test nhanh
+      const sessions_per_week = 1; // test nhanh
+      const total_amount = tuition * weeks * sessions_per_week;
+
       await conn.query(
         `
         UPDATE classes 
-        SET tutor_id = ?, status = 'ASSIGNED'
+        SET 
+          tutor_id = ?, 
+          selected_tutor_id = ?, 
+          status = 'IN_PROGRESS',
+          payment_status = 'PENDING_PAYMENT',
+          weeks = ?, 
+          sessions_per_week = ?, 
+          total_amount = ?, 
+          payment_deadline = DATE_ADD(NOW(), INTERVAL 1 MINUTE)
         WHERE class_id = ?
-      `,
-        [tutor_id, class_id]
+        `,
+        [tutor_id, tutor_id, weeks, sessions_per_week, total_amount, class_id]
       );
 
-      // 3️⃣ Gửi thông báo cho học viên
+      // 🟢 Gửi thông báo cho học viên
       await conn.query(
         `
         INSERT INTO notifications (user_id, title, message, type)
         VALUES (
-          (SELECT student_id FROM classes WHERE class_id = ?),
-          'Gia sư đã chấp nhận dạy',
-          'Gia sư đã đồng ý nhận lớp của bạn.',
-          'TUTOR_APPROVAL'
+          ?, 
+          'Gia sư đã đồng ý dạy', 
+          CONCAT('Lớp ', ? ,' đã được gia sư nhận. Vui lòng thanh toán để bắt đầu học.'), 
+          'TUTOR_ACCEPT'
         )
-      `,
-        [class_id]
+        `,
+        [student_id, class_id]
       );
 
       await conn.commit();
-      res.json({ success: true, message: "✅ Đã chấp nhận dạy lớp này!" });
+
+      console.log("✅ Tutor accepted & class updated:", {
+        class_id,
+        total_amount,
+      });
+
+      res.json({
+        success: true,
+        message:
+          "✅ Gia sư đã đồng ý dạy. Lớp chuyển sang trạng thái CẦN THANH TOÁN.",
+      });
     } catch (err) {
       await conn.rollback();
-      console.error("❌ Lỗi chấp nhận lớp:", err.sqlMessage || err.message);
-      res
-        .status(500)
-        .json({ success: false, message: err.sqlMessage || err.message });
+      console.error("❌ Lỗi accept:", err.sqlMessage || err.message);
+      res.status(500).json({
+        success: false,
+        message: err.sqlMessage || err.message,
+      });
     } finally {
       conn.release();
     }
@@ -153,6 +193,7 @@ router.post(
         "UPDATE requests SET status = 'REJECTED' WHERE request_id = ?",
         [request_id]
       );
+
       if (result.affectedRows === 0)
         return res
           .status(404)

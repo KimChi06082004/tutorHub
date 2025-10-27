@@ -4,7 +4,10 @@ import cors from "cors";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import fs from "fs";
+import cron from "node-cron"; // ✅ Thêm dòng này
+import { pool } from "./config/db.js"; // ✅ Import pool để cron job dùng
 
+// Import Routes
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import tutorRoutes from "./routes/tutors.js";
@@ -20,6 +23,7 @@ import ratingRoutes from "./routes/ratings.js";
 import uploadRoutes from "./routes/upload.js";
 import requestRoutes from "./routes/requests.js";
 import tutorSelectedRouter from "./routes/tutorSelected.js";
+
 dotenv.config();
 
 const app = express();
@@ -38,7 +42,6 @@ if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/requests", requestRoutes);
-
 app.use("/api/tutors", tutorRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/sessions", sessionRoutes);
@@ -51,6 +54,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/ratings", ratingRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/tutor/selected-classes", tutorSelectedRouter);
+
 // ✅ Static file (ảnh upload)
 app.use("/uploads", express.static("uploads"));
 
@@ -68,6 +72,28 @@ app.use((err, req, res, next) => {
   console.error("❌ Server error:", err.stack);
   res.status(500).json({ success: false, message: "Internal server error" });
 });
+
+// // 🕒 Cron Job chạy mỗi phút, tự động hủy lớp hết hạn thanh toán
+// cron.schedule("* * * * *", async () => {
+//   try {
+//     const [res] = await pool.query(`
+//       UPDATE classes
+//       SET status = 'CANCELLED',
+//           payment_status = 'EXPIRED'
+//       WHERE payment_status = 'PENDING_PAYMENT'
+//         AND payment_deadline IS NOT NULL
+//         AND payment_deadline < CONVERT_TZ(NOW(), '+00:00', '+07:00')
+//     `);
+
+//     if (res.affectedRows > 0) {
+//       console.log(
+//         `⏰ ${res.affectedRows} lớp đã bị hủy do hết hạn thanh toán.`
+//       );
+//     }
+//   } catch (err) {
+//     console.error("❌ Cron job error:", err.message);
+//   }
+// });
 
 // ✅ Khởi động server
 app.listen(PORT, () => {

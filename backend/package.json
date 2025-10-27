@@ -21,6 +21,8 @@
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
     "mysql2": "^3.11.3",
+    "node-cron": "^4.2.1",
+    "stripe": "^19.1.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

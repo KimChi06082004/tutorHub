@@ -1,11 +1,11 @@
-// frontend/src/pages/_app.js
+"use client"; // 🧩 Bắt buộc — đánh dấu file này là Client Component
+
 import "leaflet/dist/leaflet.css";
 import "../styles/globals.css";
+import "../styles/tailwind.css";
 import Footer from "../components/Footer";
 import { Inter } from "next/font/google";
-import "../styles/globals.css";
-import "leaflet/dist/leaflet.css"; //
-import "../styles/tailwind.css";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -17,6 +17,9 @@ export default function MyApp({ Component, pageProps }) {
   return (
     <div className={inter.className}>
       <Component {...pageProps} />
+      <Footer />
+      {/* ✅ Toaster chỉ chạy ở client, tránh hydration error */}
+      <Toaster position="top-right" reverseOrder={false} />
     </div>
   );
 }

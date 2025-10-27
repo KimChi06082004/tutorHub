@@ -1,8 +1,6 @@
 import express from "express";
 import { pool } from "../config/db.js";
-import { verifyToken } from "../middlewares/auth.js";
-import { requireRoles } from "../middlewares/roles.js";
-
+import { verifyToken, requireRoles } from "../middlewares/auth.js";
 const router = express.Router();
 
 /* =========================================================
@@ -484,6 +482,297 @@ router.get("/next/:id", async (req, res) => {
       success: false,
       message: "Lỗi server khi lấy lớp kế tiếp.",
     });
+  }
+});
+// 🟡 Lấy danh sách lớp CẦN THANH TOÁN (cho cả tutor và student)
+// 🟡 Lấy danh sách lớp CẦN THANH TOÁN (cho cả tutor và student)
+/* =========================================================
+   🟡 Lấy danh sách lớp CẦN THANH TOÁN
+========================================================= */
+router.get("/payment/pending", verifyToken, async (req, res) => {
+  try {
+    const { role, user_id } = req.user;
+    let query;
+
+    if (role === "tutor") {
+      query = `
+        SELECT * FROM classes 
+        WHERE tutor_id = (SELECT tutor_id FROM tutors WHERE user_id = ?) 
+        AND payment_status = 'PENDING_PAYMENT'
+        AND status NOT IN ('CANCELLED', 'EXPIRED')
+      `;
+    } else if (role === "student") {
+      query = `
+        SELECT * FROM classes 
+        WHERE student_id = ? 
+        AND payment_status = 'PENDING_PAYMENT'
+        AND status NOT IN ('CANCELLED', 'EXPIRED')
+      `;
+    } else {
+      return res
+        .status(403)
+        .json({ success: false, message: "Không có quyền" });
+    }
+
+    const [rows] = await pool.query(query, [user_id]);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error("❌ Get pending payment error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/* =========================================================
+   ⏰ HẾT HẠN THANH TOÁN
+========================================================= */
+router.put("/:id/expire-payment", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query(
+      "SELECT payment_status FROM classes WHERE class_id=?",
+      [id]
+    );
+
+    if (!rows.length)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy lớp học." });
+
+    if (rows[0].payment_status !== "PENDING_PAYMENT")
+      return res.json({
+        success: false,
+        message: "Lớp này không còn trong trạng thái chờ thanh toán.",
+      });
+
+    await pool.query(
+      "UPDATE classes SET payment_status='EXPIRED', status='CANCELLED' WHERE class_id=?",
+      [id]
+    );
+
+    res.json({
+      success: true,
+      message: "⏰ Lớp đã hết hạn thanh toán và bị hủy.",
+    });
+  } catch (err) {
+    console.error("❌ Expire payment error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/* =========================================================
+   🧾 Lấy danh sách lớp đã HỦY thanh toán hoặc HẾT HẠN
+========================================================= */
+router.get("/payment/cancelled", verifyToken, async (req, res) => {
+  try {
+    const { role, user_id } = req.user;
+    let query;
+
+    if (role === "tutor") {
+      query = `
+        SELECT class_id, subject, grade, tuition_amount, 
+               weeks, sessions_per_week, student_id,
+               payment_status, status, updated_at
+        FROM classes
+        WHERE tutor_id = (SELECT tutor_id FROM tutors WHERE user_id = ?)
+        AND payment_status IN ('PAYMENT_CANCELLED', 'EXPIRED')
+        ORDER BY updated_at DESC
+      `;
+    } else if (role === "student") {
+      query = `
+        SELECT class_id, subject, grade, tuition_amount,
+               weeks, sessions_per_week, tutor_id,
+               payment_status, status, updated_at
+        FROM classes
+        WHERE student_id = ?
+        AND payment_status IN ('PAYMENT_CANCELLED', 'EXPIRED')
+        ORDER BY updated_at DESC
+      `;
+    } else {
+      return res
+        .status(403)
+        .json({ success: false, message: "Không có quyền" });
+    }
+
+    const [rows] = await pool.query(query, [user_id]);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error("❌ Get cancelled payments error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ❌ Gia sư HỦY THANH TOÁN
+router.put(
+  "/:id/cancel-payment",
+  verifyToken,
+  requireRoles(["tutor"]),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [tutor] = await pool.query(
+        "SELECT tutor_id FROM tutors WHERE user_id=?",
+        [req.user.user_id]
+      );
+
+      if (!tutor.length)
+        return res
+          .status(400)
+          .json({ success: false, message: "Không tìm thấy gia sư." });
+
+      await pool.query(
+        "UPDATE classes SET payment_status='PAYMENT_CANCELLED', status='CANCELLED' WHERE class_id=? AND tutor_id=?",
+        [id, tutor[0].tutor_id]
+      );
+
+      res.json({ success: true, message: "🚫 Hủy thanh toán thành công!" });
+    } catch (err) {
+      console.error("❌ Cancel payment error:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+);
+
+// 🕒 Hết hạn thanh toán (cron hoặc frontend gọi)
+router.put("/:id/expire-payment", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query(
+      "SELECT payment_status FROM classes WHERE class_id=?",
+      [id]
+    );
+    if (!rows.length)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy lớp học." });
+
+    if (rows[0].payment_status !== "PENDING_PAYMENT") {
+      return res.json({
+        success: false,
+        message: "Lớp này không còn trong trạng thái chờ thanh toán.",
+      });
+    }
+
+    await pool.query(
+      "UPDATE classes SET payment_status='EXPIRED', status='CANCELLED' WHERE class_id=?",
+      [id]
+    );
+
+    res.json({
+      success: true,
+      message: "⏰ Lớp đã hết hạn thanh toán và bị hủy.",
+    });
+  } catch (err) {
+    console.error("❌ Expire payment error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/* =========================================================
+   ✅ XÁC NHẬN THANH TOÁN (Stripe callback)
+========================================================= */
+router.put("/:id/confirm-payment", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // ✅ Dùng giá trị hợp lệ trong ENUM
+    await pool.query(
+      `
+      UPDATE classes
+      SET payment_status='PAID', status='APPROVED_VISIBLE', updated_at=NOW()
+      WHERE class_id=?`,
+      [id]
+    );
+
+    res.json({
+      success: true,
+      message: "✅ Thanh toán thành công, lớp đã được kích hoạt.",
+    });
+  } catch (err) {
+    console.error("❌ Confirm payment error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ✅ Lấy danh sách lớp đang dạy (đã thanh toán)
+router.get(
+  "/tutor/active",
+  verifyToken,
+  requireRoles(["tutor"]),
+  async (req, res) => {
+    try {
+      const tutorId = req.user.user_id;
+
+      const [rows] = await pool.query(
+        `
+        SELECT 
+          c.class_id,
+          c.subject,
+          c.grade,
+          c.schedule,
+          c.city,
+          c.district,
+          c.ward,
+          c.address,
+          c.payment_status,
+          c.status,
+          u.full_name AS student_name,
+          u.email AS student_email,
+          DATE_ADD(c.created_at, INTERVAL 0 WEEK) AS start_date,
+          DATE_ADD(c.created_at, INTERVAL JSON_EXTRACT(c.schedule, '$.weeks') WEEK) AS end_date
+        FROM classes c
+        JOIN users u ON u.user_id = c.student_id
+        WHERE c.selected_tutor_id = (
+            SELECT tutor_id FROM tutors WHERE user_id = ?
+        )
+        AND c.payment_status = 'PAID'
+        AND c.status = 'APPROVED_VISIBLE'
+        ORDER BY c.created_at DESC
+        `,
+        [tutorId]
+      );
+
+      res.json({ success: true, data: rows });
+    } catch (err) {
+      console.error("❌ Get active tutor classes error:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+);
+
+//
+
+router.get("/payment/paid", verifyToken, async (req, res) => {
+  try {
+    const { role, user_id } = req.user;
+    let query;
+
+    if (role === "tutor") {
+      query = `
+        SELECT class_id, subject, grade, tuition_amount, payment_status, status
+        FROM classes
+        WHERE tutor_id = (SELECT tutor_id FROM tutors WHERE user_id = ?)
+        AND payment_status = 'PAID'
+        ORDER BY updated_at DESC
+      `;
+    } else if (role === "student") {
+      query = `
+        SELECT class_id, subject, grade, tuition_amount, payment_status, status
+        FROM classes
+        WHERE student_id = ?
+        AND payment_status = 'PAID'
+        ORDER BY updated_at DESC
+      `;
+    } else {
+      return res
+        .status(403)
+        .json({ success: false, message: "Không có quyền" });
+    }
+
+    const [rows] = await pool.query(query, [user_id]);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error("❌ Get paid classes error:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

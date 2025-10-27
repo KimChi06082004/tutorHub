@@ -7,6 +7,7 @@ import TopbarStudent from "../../components/TopbarStudent";
 import dynamic from "next/dynamic";
 import { IoArrowBackOutline, IoArrowForwardOutline } from "react-icons/io5";
 import Link from "next/link";
+
 const VietnamMap = dynamic(() => import("../../components/VietnamMap"), {
   ssr: false,
 });
@@ -35,6 +36,7 @@ export default function TutorDetail() {
     fetchAllTutors();
   }, []);
 
+  // 🔹 Lấy dữ liệu chi tiết tutor + lớp của học viên
   useEffect(() => {
     if (!id) return;
 
@@ -67,22 +69,29 @@ export default function TutorDetail() {
       }
     };
 
+    fetchTutor();
+    fetchStudentClasses();
+  }, [id]);
+
+  // ✅ Kiểm tra xem lớp được chọn đã gửi yêu cầu chưa
+  useEffect(() => {
+    if (!id || !selectedClass) return;
     const checkRequest = async () => {
       try {
         const res = await api.get("/requests");
         const exists = res.data.data?.some(
-          (r) => r.tutor_id === Number(id) && r.status === "PENDING"
+          (r) =>
+            r.tutor_id === Number(id) &&
+            r.class_id === selectedClass.class_id &&
+            r.status === "PENDING"
         );
         setIsRequested(exists);
       } catch (err) {
         console.error("❌ Lỗi kiểm tra yêu cầu:", err);
       }
     };
-
-    fetchTutor();
-    fetchStudentClasses();
     checkRequest();
-  }, [id]);
+  }, [id, selectedClass]);
 
   // ✅ Chuyển đến CV kế tiếp
   const handleNextTutor = () => {
@@ -120,11 +129,19 @@ export default function TutorDetail() {
         alert("✅ Đã gửi yêu cầu học thành công!");
         setIsRequested(true);
       } else {
-        alert("❌ " + (res.data.message || "Không gửi được yêu cầu!"));
+        alert("⚠️ " + (res.data.message || "Không gửi được yêu cầu!"));
       }
     } catch (err) {
-      console.error("❌ Lỗi gửi yêu cầu:", err);
-      alert(err.response?.data?.message || "🚨 Lỗi hệ thống!");
+      const msg =
+        err.response?.data?.message ||
+        "🚨 Đã xảy ra lỗi, vui lòng thử lại sau.";
+      if (msg.includes("Trùng lịch")) {
+        alert("⏰ " + msg);
+      } else if (msg.includes("3 yêu cầu")) {
+        alert("⚠️ " + msg);
+      } else {
+        alert("❌ " + msg);
+      }
     }
   };
 
@@ -297,6 +314,7 @@ export default function TutorDetail() {
                   />
                 </div>
               </div>
+
               {/* Giới thiệu bản thân */}
               <div className="mt-4">
                 <h4 className="font-semibold text-gray-800 mb-1">

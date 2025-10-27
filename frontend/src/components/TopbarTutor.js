@@ -89,7 +89,7 @@ export default function TopbarTutor() {
               {openMenu === "payment" && (
                 <div className="absolute left-0 bg-[#004080] text-white rounded-md mt-1 w-56 shadow-md">
                   <Link
-                    href="/tutor/payments/pending"
+                    href="/tutor/payments"
                     className="block px-4 py-2 hover:bg-[#0059b3]"
                     onClick={() => setOpenMenu(null)}
                   >
@@ -124,7 +124,7 @@ export default function TopbarTutor() {
               {openMenu === "class" && (
                 <div className="absolute left-0 bg-[#004080] text-white rounded-md mt-1 w-56 shadow-md">
                   <Link
-                    href="/tutor/schedule/ongoing"
+                    href="/tutor/classes/active"
                     className="block px-4 py-2 hover:bg-[#0059b3]"
                     onClick={() => setOpenMenu(null)}
                   >
