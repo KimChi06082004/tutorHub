@@ -1,36 +1,27 @@
 import { useEffect, useState } from "react";
+import api from "../../../utils/api";
 import SidebarTutor from "../../../components/SidebarTutor";
 import TopbarTutor from "../../../components/TopbarTutor";
 import Footer from "../../../components/Footer";
-import api from "../../../utils/api";
 
-export default function CompletedClasses() {
+export default function TutorCompletedClasses() {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCompleted = async () => {
-      try {
-        const res = await api.get("/classes/tutor/completed");
-        if (res.data.success) {
-          setClasses(res.data.data);
-        }
-      } catch (err) {
-        console.error("❌ Lỗi tải lớp đã kết thúc:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCompleted();
+    fetchData();
   }, []);
 
-  if (loading)
-    return (
-      <div className="text-center text-gray-500 py-10">
-        ⏳ Đang tải danh sách lớp đã kết thúc...
-      </div>
-    );
+  const fetchData = async () => {
+    try {
+      const res = await api.get("/classes/tutor/completed");
+      if (res.data.success) setClasses(res.data.data);
+    } catch (err) {
+      console.error("❌ Lỗi tải lớp đã kết thúc:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -41,43 +32,53 @@ export default function CompletedClasses() {
       <div className="flex-1 flex flex-col">
         <TopbarTutor />
         <main className="flex-1 p-6 mt-[70px]">
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl font-bold text-blue-700 mb-6">
-              🏁 Lớp học đã kết thúc
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-2xl font-semibold mb-4 text-purple-700">
+              🏁 Lớp đã kết thúc
             </h2>
 
-            {classes.length === 0 ? (
-              <div className="text-gray-500 italic text-center">
-                Hiện bạn chưa có lớp nào đã kết thúc.
-              </div>
+            {loading ? (
+              <p className="text-gray-500 text-center py-10">
+                ⏳ Đang tải dữ liệu...
+              </p>
+            ) : classes.length === 0 ? (
+              <p className="text-gray-500 italic text-center">
+                Bạn chưa có lớp nào đã kết thúc.
+              </p>
             ) : (
-              <div className="grid md:grid-cols-2 gap-4">
-                {classes.map((cls) => (
-                  <div
-                    key={cls.class_id}
-                    className="p-5 rounded-xl shadow bg-white border border-gray-200 hover:shadow-lg transition"
-                  >
-                    <h3 className="text-lg font-semibold text-blue-800">
-                      {cls.subject} - {cls.grade}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      🏠 {cls.address || "Không có địa chỉ"}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      👩‍🎓 Học viên: {cls.student_name}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      💰 Học phí: {cls.tuition_amount?.toLocaleString()} VND
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      ⏰ Hoàn tất:{" "}
+              classes.map((cls) => (
+                <div
+                  key={cls.class_id}
+                  className="mb-4 p-5 rounded-2xl border shadow-md bg-white transition hover:shadow-lg"
+                >
+                  <h3 className="font-bold text-blue-800 text-lg">
+                    {cls.subject} - Lớp {cls.grade}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    👩‍🎓 Học viên: {cls.student_name}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    📧 {cls.student_email}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    🏠 Địa chỉ: {cls.address || "Chưa có thông tin"}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    💰 Học phí: {cls.tuition_amount?.toLocaleString()} VND/h
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    🕒 Ngày hoàn thành:{" "}
+                    <b>
                       {cls.completed_at
                         ? new Date(cls.completed_at).toLocaleDateString("vi-VN")
-                        : "Chưa xác định"}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                        : "-"}
+                    </b>
+                  </p>
+                  <p className="mt-2 text-green-600 font-medium">
+                    ✅ Trạng thái: Lớp đã hoàn tất
+                  </p>
+                </div>
+              ))
             )}
           </div>
         </main>

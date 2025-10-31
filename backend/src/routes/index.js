@@ -12,6 +12,7 @@ import complaints from "./complaints.js";
 import referrals from "./referrals.js";
 import notifications from "./notifications.js";
 import ratings from "./ratings.js";
+import chatbot from "./chatbot.js";
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use("/complaints", complaints);
 router.use("/referrals", referrals);
 router.use("/notifications", notifications);
 router.use("/ratings", ratings);
+router.use("/chatbot", chatbot);
 
 export default router;

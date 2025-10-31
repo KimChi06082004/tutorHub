@@ -1,29 +1,30 @@
 // frontend/src/pages/dashboard/tutor.js
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
-import Sidebar from "../../components/Sidebar";
+import SidebarTutor from "../../components/SidebarTutor";
 import TopbarTutor from "../../components/TopbarTutor";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 
-// ✅ Import động VietnamMap (Leaflet)
 const VietnamMap = dynamic(() => import("../../components/VietnamMap"), {
-  ssr: false, // ❗ Tắt SSR để tránh lỗi window is not defined
+  ssr: false,
 });
 
 export default function TutorDashboard() {
   const router = useRouter();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [subject, setSubject] = useState(""); // 🔍 Môn học tìm kiếm
-  const [showMap, setShowMap] = useState(false); // Map toggle cho mobile
+  const [subject, setSubject] = useState("");
+  const [showMap, setShowMap] = useState(false);
 
-  // ✅ Tải danh sách lớp khi vào trang
+  // 🧩 Phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const classesPerPage = 3;
+
   useEffect(() => {
     fetchClasses();
   }, []);
 
-  // ✅ Hàm tải danh sách lớp (có thể lọc theo môn học)
   const fetchClasses = async (search = "") => {
     setLoading(true);
     try {
@@ -34,23 +35,36 @@ export default function TutorDashboard() {
         : "/classes?status=APPROVED_VISIBLE";
 
       const res = await api.get(url);
-      setClasses(res.data.data || res.data || []); // ✅ luôn là array
+      setClasses(res.data.data || res.data || []);
     } catch (err) {
       console.error("❌ Load classes error:", err);
-      setClasses([]); // fallback
+      setClasses([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Khi bấm “Tìm kiếm”
   const handleSearch = () => {
+    setCurrentPage(1); // reset lại trang khi tìm kiếm
     fetchClasses(subject);
+  };
+
+  // 🧮 Tính toán chỉ số hiển thị
+  const indexOfLast = currentPage * classesPerPage;
+  const indexOfFirst = indexOfLast - classesPerPage;
+  const currentClasses = classes.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(classes.length / classesPerPage);
+
+  const handlePrev = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
 
   return (
     <div>
-      <Sidebar />
+      <SidebarTutor />
       <TopbarTutor />
 
       <div className="main-content p-6">
@@ -59,7 +73,7 @@ export default function TutorDashboard() {
           Lớp đã được duyệt, gia sư có thể apply để nhận lớp
         </p>
 
-        {/* 🔍 Thanh tìm kiếm môn học */}
+        {/* 🔍 Thanh tìm kiếm */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6 mt-5">
           <input
             type="text"
@@ -76,7 +90,7 @@ export default function TutorDashboard() {
           </button>
         </div>
 
-        {/* ✅ Bố cục danh sách lớp + bản đồ */}
+        {/* ✅ Danh sách lớp */}
         <div
           className="content-wrapper"
           style={{ display: "flex", flexDirection: "row", gap: 20 }}
@@ -85,10 +99,10 @@ export default function TutorDashboard() {
           <div style={{ flex: 2 }}>
             {loading ? (
               <p>⏳ Đang tải lớp...</p>
-            ) : !Array.isArray(classes) || classes.length === 0 ? (
+            ) : currentClasses.length === 0 ? (
               <p>⚠️ Hiện chưa có lớp nào khả dụng</p>
             ) : (
-              classes.map((cls) => (
+              currentClasses.map((cls) => (
                 <div
                   key={cls.class_id}
                   className="tutor-card border border-gray-200 rounded-xl p-4 mb-4 shadow-sm hover:shadow-md transition"
@@ -101,7 +115,43 @@ export default function TutorDashboard() {
                     👤 Học viên: <b>{cls.student_name}</b>
                   </p>
                   <p className="text-gray-700">📘 Môn: {cls.subject}</p>
-                  <p className="text-gray-700">📅 Lịch học: {cls.schedule}</p>
+                  <p className="text-gray-700">
+                    📅 Lịch học:{" "}
+                    {(() => {
+                      try {
+                        const schedule =
+                          typeof cls.schedule === "string"
+                            ? JSON.parse(cls.schedule)
+                            : cls.schedule || {};
+
+                        const daysMap = {
+                          T2: "Thứ 2",
+                          T3: "Thứ 3",
+                          T4: "Thứ 4",
+                          T5: "Thứ 5",
+                          T6: "Thứ 6",
+                          T7: "Thứ 7",
+                          CN: "Chủ nhật",
+                        };
+
+                        const days =
+                          schedule.days
+                            ?.map((d) => daysMap[d] || d)
+                            .join(", ") || "Chưa rõ";
+                        const weeks = schedule.weeks
+                          ? `${schedule.weeks} tuần`
+                          : "";
+                        const from = schedule.timeRange?.from || "";
+                        const to = schedule.timeRange?.to || "";
+
+                        return `${days} ${weeks ? `, ${weeks}` : ""} ${
+                          from && to ? `, ${from} - ${to}` : ""
+                        }`;
+                      } catch {
+                        return "Chưa có lịch học";
+                      }
+                    })()}
+                  </p>
                   <p className="text-gray-700">
                     💰 Học phí:{" "}
                     {cls.tuition_amount
@@ -127,9 +177,42 @@ export default function TutorDashboard() {
                 </div>
               ))
             )}
+
+            {/* 🔸 Phân trang nhỏ gọn góc phải */}
+            {totalPages > 1 && (
+              <div className="flex justify-end items-center mt-4 mr-3 select-none">
+                <button
+                  onClick={handlePrev}
+                  disabled={currentPage === 1}
+                  className={`px-2 py-1 text-sm rounded-md transition ${
+                    currentPage === 1
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-blue-600 hover:text-blue-800"
+                  }`}
+                >
+                  ◀
+                </button>
+
+                <span className="text-gray-700 text-sm font-medium mx-2">
+                  {currentPage} / {totalPages}
+                </span>
+
+                <button
+                  onClick={handleNext}
+                  disabled={currentPage === totalPages}
+                  className={`px-2 py-1 text-sm rounded-md transition ${
+                    currentPage === totalPages
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-blue-600 hover:text-blue-800"
+                  }`}
+                >
+                  ▶
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* ✅ Bản đồ Việt Nam hiển thị avatar học viên */}
+          {/* Bản đồ */}
           <div
             className="map-container desktop-only"
             style={{

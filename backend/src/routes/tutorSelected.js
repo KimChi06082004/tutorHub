@@ -140,18 +140,16 @@ router.post(
         [tutor_id, tutor_id, weeks, sessions_per_week, total_amount, class_id]
       );
 
-      // 🟢 Gửi thông báo cho học viên
       await conn.query(
         `
-        INSERT INTO notifications (user_id, title, message, type)
-        VALUES (
-          ?, 
-          'Gia sư đã đồng ý dạy', 
-          CONCAT('Lớp ', ? ,' đã được gia sư nhận. Vui lòng thanh toán để bắt đầu học.'), 
-          'TUTOR_ACCEPT'
-        )
+        INSERT INTO notifications (user_id, role, title, message, type, is_read, created_at)
+        VALUES (?, 'student', ?, ?, 'CLASS_UPDATE', 0, NOW())
         `,
-        [student_id, class_id]
+        [
+          student_id,
+          'Gia sư đã đồng ý dạy',
+          `Lớp ${class_id} đã được gia sư nhận. Vui lòng thanh toán để bắt đầu học.`
+        ]
       );
 
       await conn.commit();

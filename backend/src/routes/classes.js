@@ -355,6 +355,85 @@ router.delete("/:id", verifyToken, requireRoles("admin"), async (req, res) => {
 });
 
 /* =========================================================
+   🧮 ADMIN – Danh sách tất cả lớp có phân trang
+   GET /api/classes/admin?page=1&limit=10&status=APPROVED_VISIBLE
+========================================================= */
+router.get(
+  "/admin",
+  verifyToken,
+  requireRoles(["admin", "cskh"]),
+  async (req, res) => {
+    try {
+      let { page = 1, limit = 5, status, search } = req.query;
+      page = parseInt(page);
+      limit = parseInt(limit);
+      const offset = (page - 1) * limit;
+
+      // ✅ Base query
+      let whereClause = "WHERE 1=1";
+      const params = [];
+
+      // Lọc theo trạng thái
+      if (status) {
+        whereClause += " AND c.status = ?";
+        params.push(status);
+      }
+
+      // Lọc theo từ khóa (tìm theo tên môn học hoặc tên học viên)
+      if (search) {
+        whereClause += " AND (c.subject LIKE ? OR u.full_name LIKE ?)";
+        params.push(`%${search}%`, `%${search}%`);
+      }
+
+      // ✅ Lấy tổng số bản ghi
+      const [[{ total }]] = await pool.query(
+        `SELECT COUNT(*) AS total
+         FROM classes c
+         JOIN users u ON c.student_id = u.user_id
+         ${whereClause}`,
+        params
+      );
+
+      // ✅ Lấy dữ liệu trang hiện tại
+      const [rows] = await pool.query(
+        `
+        SELECT 
+          c.class_id, c.subject, c.grade, c.schedule, 
+          c.tuition_amount, c.status, c.visibility,
+          c.city, c.district, c.ward, c.created_at,
+          u.full_name AS student_name
+        FROM classes c
+        JOIN users u ON c.student_id = u.user_id
+        ${whereClause}
+        ORDER BY c.created_at DESC
+        LIMIT ? OFFSET ?
+      `,
+        [...params, limit, offset]
+      );
+
+      const totalPages = Math.ceil(total / limit);
+
+      res.json({
+        success: true,
+        data: rows,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems: total,
+          limit,
+        },
+      });
+    } catch (err) {
+      console.error("❌ Admin classes pagination error:", err);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi server khi lấy danh sách lớp (admin).",
+      });
+    }
+  }
+);
+
+/* =========================================================
    GET /api/classes/:id (chi tiết lớp cho tutor / student)
 ========================================================= */
 router.get("/:id", verifyToken, async (req, res) => {
@@ -503,11 +582,17 @@ router.get("/payment/pending", verifyToken, async (req, res) => {
       `;
     } else if (role === "student") {
       query = `
-        SELECT * FROM classes 
-        WHERE student_id = ? 
-        AND payment_status = 'PENDING_PAYMENT'
-        AND status NOT IN ('CANCELLED', 'EXPIRED')
-      `;
+    SELECT 
+      c.class_id, c.subject, c.grade, c.tuition_amount,
+      c.payment_status, c.status, c.selected_tutor_id,
+      u.full_name AS tutor_name, u.email AS tutor_email
+    FROM classes c
+    LEFT JOIN tutors t ON c.selected_tutor_id = t.tutor_id
+    LEFT JOIN users u ON t.user_id = u.user_id
+    WHERE c.student_id = ?
+    AND c.payment_status = 'PENDING_PAYMENT'
+    AND c.status NOT IN ('CANCELLED', 'EXPIRED')
+  `;
     } else {
       return res
         .status(403)
@@ -579,14 +664,17 @@ router.get("/payment/cancelled", verifyToken, async (req, res) => {
       `;
     } else if (role === "student") {
       query = `
-        SELECT class_id, subject, grade, tuition_amount,
-               weeks, sessions_per_week, tutor_id,
-               payment_status, status, updated_at
-        FROM classes
-        WHERE student_id = ?
-        AND payment_status IN ('PAYMENT_CANCELLED', 'EXPIRED')
-        ORDER BY updated_at DESC
-      `;
+    SELECT 
+      c.class_id, c.subject, c.grade, c.tuition_amount,
+      c.payment_status, c.status, c.updated_at,
+      u.full_name AS tutor_name, u.email AS tutor_email
+    FROM classes c
+    LEFT JOIN tutors t ON c.selected_tutor_id = t.tutor_id
+    LEFT JOIN users u ON t.user_id = u.user_id
+    WHERE c.student_id = ?
+    AND c.payment_status IN ('PAYMENT_CANCELLED', 'EXPIRED', 'CANCELLED')
+    ORDER BY c.updated_at DESC
+  `;
     } else {
       return res
         .status(403)
@@ -671,25 +759,80 @@ router.put("/:id/expire-payment", verifyToken, async (req, res) => {
    ✅ XÁC NHẬN THANH TOÁN (Stripe callback)
 ========================================================= */
 router.put("/:id/confirm-payment", verifyToken, async (req, res) => {
+  const conn = await pool.getConnection();
   try {
     const { id } = req.params;
 
-    // ✅ Dùng giá trị hợp lệ trong ENUM
-    await pool.query(
-      `
-      UPDATE classes
-      SET payment_status='PAID', status='APPROVED_VISIBLE', updated_at=NOW()
-      WHERE class_id=?`,
+    await conn.beginTransaction();
+
+    // 🔍 Lấy thông tin lớp học
+    const [classRows] = await conn.query(
+      "SELECT student_id, total_amount FROM classes WHERE class_id=?",
       [id]
     );
+
+    if (!classRows.length) {
+      await conn.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy lớp học.",
+      });
+    }
+
+    const { student_id, total_amount } = classRows[0];
+
+    // ✅ Cập nhật trạng thái lớp học
+    await conn.query(
+      `UPDATE classes
+       SET payment_status='PAID', status='APPROVED_VISIBLE', updated_at=NOW()
+       WHERE class_id=?`,
+      [id]
+    );
+
+    // 💾 Kiểm tra xem đã có order chưa
+    const [existingOrders] = await conn.query(
+      "SELECT order_id FROM orders WHERE class_id=? AND student_id=?",
+      [id, student_id]
+    );
+
+    let order_id;
+
+    if (existingOrders.length > 0) {
+      order_id = existingOrders[0].order_id;
+
+      // Cập nhật order nếu đã tồn tại
+      await conn.query(
+        "UPDATE orders SET status='PAID', paid_at=NOW() WHERE order_id=?",
+        [order_id]
+      );
+    } else {
+      // Tạo order mới nếu chưa có
+      const [orderResult] = await conn.query(
+        `INSERT INTO orders (class_id, student_id, status) VALUES (?, ?, 'PAID')`,
+        [id, student_id]
+      );
+      order_id = orderResult.insertId;
+    }
+
+    // 💾 Lưu thông tin thanh toán vào bảng payments
+    await conn.query(
+      `INSERT INTO payments (order_id, payment_method, amount, status, transaction_code, created_at)
+       VALUES (?, 'STRIPE', ?, 'SUCCESS', CONCAT('STRIPE_', ?), NOW())`,
+      [order_id, total_amount || 0, id]
+    );
+
+    await conn.commit();
 
     res.json({
       success: true,
       message: "✅ Thanh toán thành công, lớp đã được kích hoạt.",
     });
   } catch (err) {
+    await conn.rollback();
     console.error("❌ Confirm payment error:", err);
     res.status(500).json({ success: false, message: err.message });
+  } finally {
+    conn.release();
   }
 });
 
@@ -756,12 +899,17 @@ router.get("/payment/paid", verifyToken, async (req, res) => {
       `;
     } else if (role === "student") {
       query = `
-        SELECT class_id, subject, grade, tuition_amount, payment_status, status
-        FROM classes
-        WHERE student_id = ?
-        AND payment_status = 'PAID'
-        ORDER BY updated_at DESC
-      `;
+    SELECT 
+      c.class_id, c.subject, c.grade, c.tuition_amount,
+      c.payment_status, c.status, 
+      u.full_name AS tutor_name, u.email AS tutor_email
+    FROM classes c
+    LEFT JOIN tutors t ON c.selected_tutor_id = t.tutor_id
+    LEFT JOIN users u ON t.user_id = u.user_id
+    WHERE c.student_id = ?
+    AND c.payment_status = 'PAID'
+    ORDER BY c.updated_at DESC
+  `;
     } else {
       return res
         .status(403)
@@ -777,6 +925,7 @@ router.get("/payment/paid", verifyToken, async (req, res) => {
 });
 
 // ✅ Lấy danh sách lớp đã kết thúc (cho tutor)
+// ✅ Lấy danh sách lớp đã kết thúc (cho gia sư)
 router.get(
   "/tutor/completed",
   verifyToken,
@@ -787,24 +936,170 @@ router.get(
 
       const [rows] = await pool.query(
         `
-      SELECT 
-        c.class_id, c.subject, c.grade, c.address, 
-        c.tuition_amount, c.completed_at, 
-        u.full_name AS student_name
-      FROM classes c
-      JOIN users u ON u.user_id = c.student_id
-      WHERE c.selected_tutor_id = (
-        SELECT tutor_id FROM tutors WHERE user_id = ?
-      )
-      AND c.status = 'DONE'
-      ORDER BY c.completed_at DESC
-      `,
+        SELECT 
+          c.class_id,
+          c.subject,
+          c.grade,
+          c.schedule,
+          c.city,
+          c.district,
+          c.ward,
+          c.address,
+          c.tuition_amount,
+          c.completed_at,
+          u.full_name AS student_name,
+          u.email AS student_email
+        FROM classes c
+        JOIN users u ON u.user_id = c.student_id
+        WHERE c.selected_tutor_id = (
+            SELECT tutor_id FROM tutors WHERE user_id = ?
+        )
+        AND c.status = 'DONE'
+        ORDER BY c.completed_at DESC
+        `,
         [tutorId]
       );
 
       res.json({ success: true, data: rows });
     } catch (err) {
       console.error("❌ Get completed tutor classes error:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+);
+
+// ✅ Lấy danh sách lớp đang học (cho học viên)
+router.get(
+  "/student/active",
+  verifyToken,
+  requireRoles(["student"]),
+  async (req, res) => {
+    try {
+      const studentId = req.user.user_id;
+
+      const [rows] = await pool.query(
+        `
+        SELECT 
+          c.class_id,
+          c.subject,
+          c.grade,
+          c.schedule,
+          c.city,
+          c.district,
+          c.ward,
+          c.address,
+          c.payment_status,
+          c.status,
+          t.tutor_id,
+          u.full_name AS tutor_name,
+          u.email AS tutor_email,
+          DATE_ADD(c.created_at, INTERVAL 0 WEEK) AS start_date,
+          DATE_ADD(c.created_at, INTERVAL JSON_EXTRACT(c.schedule, '$.weeks') WEEK) AS end_date
+        FROM classes c
+        JOIN tutors t ON c.selected_tutor_id = t.tutor_id
+        JOIN users u ON u.user_id = t.user_id
+        WHERE c.student_id = ?
+        AND c.payment_status = 'PAID'
+        AND c.status = 'APPROVED_VISIBLE'
+        ORDER BY c.created_at DESC
+        `,
+        [studentId]
+      );
+
+      res.json({ success: true, data: rows });
+    } catch (err) {
+      console.error("❌ Get active student classes error:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+);
+
+// ✅ Lấy danh sách lớp đã kết thúc (cho học viên)
+router.get(
+  "/student/completed",
+  verifyToken,
+  requireRoles(["student"]),
+  async (req, res) => {
+    try {
+      const studentId = req.user.user_id;
+
+      const [rows] = await pool.query(
+        `
+        SELECT 
+          c.class_id,
+          c.subject,
+          c.grade,
+          c.schedule,
+          c.city,
+          c.district,
+          c.ward,
+          c.address,
+          c.tuition_amount,
+          c.completed_at,
+          u.full_name AS tutor_name,
+          u.email AS tutor_email
+        FROM classes c
+        JOIN tutors t ON c.selected_tutor_id = t.tutor_id
+        JOIN users u ON u.user_id = t.user_id
+        WHERE c.student_id = ?
+        AND c.status = 'DONE'
+        ORDER BY c.completed_at DESC
+        `,
+        [studentId]
+      );
+
+      res.json({ success: true, data: rows });
+    } catch (err) {
+      console.error("❌ Get completed student classes error:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+);
+
+// ✅ Xem chi tiết lớp đã kết thúc (cho học viên)
+router.get(
+  "/student/completed/:id",
+  verifyToken,
+  requireRoles(["student"]),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const studentId = req.user.user_id;
+
+      const [rows] = await pool.query(
+        `
+        SELECT 
+          c.class_id,
+          c.subject,
+          c.grade,
+          c.schedule,
+          c.city,
+          c.district,
+          c.ward,
+          c.address,
+          c.tuition_amount,
+          c.completed_at,
+          u.full_name AS tutor_name,
+          u.email AS tutor_email
+        FROM classes c
+        JOIN tutors t ON c.selected_tutor_id = t.tutor_id
+        JOIN users u ON u.user_id = t.user_id
+        WHERE c.class_id = ?
+          AND c.student_id = ?
+          AND c.status = 'DONE'
+        LIMIT 1
+        `,
+        [id, studentId]
+      );
+
+      if (!rows.length)
+        return res
+          .status(404)
+          .json({ success: false, message: "Không tìm thấy lớp học." });
+
+      res.json({ success: true, data: rows[0] });
+    } catch (err) {
+      console.error("❌ Get completed class detail error:", err);
       res.status(500).json({ success: false, message: err.message });
     }
   }

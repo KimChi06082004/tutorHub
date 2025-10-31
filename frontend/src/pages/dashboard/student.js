@@ -7,7 +7,6 @@ import SidebarToggle from "../../components/SidebarToggle";
 import dynamic from "next/dynamic";
 import TopbarStudent from "../../components/TopbarStudent";
 
-// ⚙️ Bản đồ được load động (client-side)
 const MapWrapper = dynamic(() => import("../../components/MapWrapper"), {
   ssr: false,
 });
@@ -18,6 +17,10 @@ export default function StudentDashboard() {
   const [showMap, setShowMap] = useState(false);
   const [subject, setSubject] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 🧩 Phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const tutorsPerPage = 3;
 
   useEffect(() => {
     fetchTutors();
@@ -40,23 +43,22 @@ export default function StudentDashboard() {
   };
 
   const handleSearch = () => {
+    setCurrentPage(1); // reset khi tìm kiếm
     fetchTutors(subject);
   };
 
-  // 🧠 Debug: kiểm tra dữ liệu tọa độ của tutors
-  useEffect(() => {
-    if (tutors.length > 0) {
-      console.log(
-        "🗺️ Tutors hiển thị bản đồ:",
-        tutors.map((t) => ({
-          id: t.tutor_id,
-          name: t.full_name,
-          lat: t.lat,
-          lng: t.lng,
-        }))
-      );
-    }
-  }, [tutors]);
+  // 🧮 Tính toán phân trang
+  const indexOfLast = currentPage * tutorsPerPage;
+  const indexOfFirst = indexOfLast - tutorsPerPage;
+  const currentTutors = tutors.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(tutors.length / tutorsPerPage);
+
+  const handlePrev = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
 
   // ⚙️ Lọc các tutor có tọa độ hợp lệ để truyền vào bản đồ
   const validTutors = tutors.filter(
@@ -112,10 +114,10 @@ export default function StudentDashboard() {
           <div className="tutor-list" style={{ flex: 1 }}>
             {loading ? (
               <p>⏳ Đang tải danh sách gia sư...</p>
-            ) : tutors.length === 0 ? (
+            ) : currentTutors.length === 0 ? (
               <p>Không có gia sư nào phù hợp 😢</p>
             ) : (
-              tutors.map((t) => (
+              currentTutors.map((t) => (
                 <div
                   key={t.tutor_id}
                   className="tutor-card border border-gray-200 rounded-xl p-4 mb-4 shadow-sm hover:shadow-md transition"
@@ -146,6 +148,37 @@ export default function StudentDashboard() {
                   </button>
                 </div>
               ))
+            )}
+
+            {/* 🔸 Phân trang nhỏ gọn góc phải */}
+            {totalPages > 1 && (
+              <div className="flex justify-end items-center mt-2 mr-2 select-none">
+                <button
+                  onClick={handlePrev}
+                  disabled={currentPage === 1}
+                  className={`px-2 py-1 text-sm rounded-md transition ${
+                    currentPage === 1
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-blue-600 hover:text-blue-800"
+                  }`}
+                >
+                  ◀
+                </button>
+                <span className="text-gray-700 text-sm font-medium mx-2">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={handleNext}
+                  disabled={currentPage === totalPages}
+                  className={`px-2 py-1 text-sm rounded-md transition ${
+                    currentPage === totalPages
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-blue-600 hover:text-blue-800"
+                  }`}
+                >
+                  ▶
+                </button>
+              </div>
             )}
           </div>
 
@@ -179,8 +212,6 @@ export default function StudentDashboard() {
           )}
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

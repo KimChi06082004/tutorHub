@@ -88,7 +88,7 @@ router.post("/", verifyToken, async (req, res) => {
           "⚠️ Bạn chỉ được gửi tối đa 3 yêu cầu chờ duyệt cùng một gia sư.",
       });
 
-    // 🧭 Lấy toàn bộ lịch học đã gửi cho gia sư này
+    // 🧭 Kiểm tra trùng lịch học
     const [existingRequests] = await pool.query(
       `
       SELECT c.schedule
@@ -100,94 +100,91 @@ router.post("/", verifyToken, async (req, res) => {
       [studentId, tutor_id]
     );
 
-    // 🕒 Hàm chuyển giờ sang phút
     function parseTime(t) {
       if (!t || typeof t !== "string") return 0;
       const [h, m] = t.split(":").map(Number);
       return h * 60 + (m || 0);
     }
 
-    // 🧩 Hàm kiểm tra trùng lịch an toàn
     function isTimeConflict(scheduleA, scheduleB) {
-      let newSchedule = scheduleA;
-      let oldSchedule = scheduleB;
+      let newSchedule =
+        typeof scheduleA === "string" ? JSON.parse(scheduleA) : scheduleA;
+      let oldSchedule =
+        typeof scheduleB === "string" ? JSON.parse(scheduleB) : scheduleB;
 
-      // Nếu là JSON string thì parse
-      if (typeof newSchedule === "string") {
-        try {
-          newSchedule = JSON.parse(newSchedule);
-        } catch {
-          newSchedule = {};
-        }
-      }
-      if (typeof oldSchedule === "string") {
-        try {
-          oldSchedule = JSON.parse(oldSchedule);
-        } catch {
-          oldSchedule = {};
-        }
-      }
+      const daysA = Array.isArray(newSchedule?.weeks) ? newSchedule.weeks : [];
+      const daysB = Array.isArray(oldSchedule?.weeks) ? oldSchedule.weeks : [];
 
-      const weeksA = Array.isArray(newSchedule?.weeks) ? newSchedule.weeks : [];
-      const weeksB = Array.isArray(oldSchedule?.weeks) ? oldSchedule.weeks : [];
-
-      const timeA = newSchedule?.timeRange || {};
-      const timeB = oldSchedule?.timeRange || {};
-
-      // Nếu không trùng ngày → bỏ qua
-      const sameDay = weeksA.some((day) => weeksB.includes(day));
+      const sameDay = daysA.some((d) => daysB.includes(d));
       if (!sameDay) return false;
 
-      // Nếu trùng ngày → kiểm tra trùng giờ hoặc gần giờ
-      const startA = parseTime(timeA.from);
-      const endA = parseTime(timeA.to);
-      const startB = parseTime(timeB.from);
-      const endB = parseTime(timeB.to);
+      const startA = parseTime(newSchedule?.timeRange?.from);
+      const endA = parseTime(newSchedule?.timeRange?.to);
+      const startB = parseTime(oldSchedule?.timeRange?.from);
+      const endB = parseTime(oldSchedule?.timeRange?.to);
 
-      if (!startA || !startB) return false;
-
-      const diff = Math.min(Math.abs(startA - startB), Math.abs(endA - endB));
-
-      // Nếu giờ học trùng hoặc cách nhau < 45 phút → trùng
-      return diff < 45;
+      return Math.abs(startA - startB) < 45 || Math.abs(endA - endB) < 45;
     }
 
-    // 🧮 Parse lịch mới
     const newSchedule =
       typeof schedule === "string" ? JSON.parse(schedule) : schedule;
 
     for (const e of existingRequests) {
-      const existingSchedule =
-        typeof e.schedule === "string" ? JSON.parse(e.schedule) : e.schedule;
-
-      if (isTimeConflict(newSchedule, existingSchedule)) {
+      if (isTimeConflict(newSchedule, e.schedule)) {
         return res.status(400).json({
           success: false,
-          message:
-            "⚠️ Trùng lịch học: lớp này cùng ngày, cùng giờ hoặc cách <45 phút so với lớp khác đã gửi cho gia sư này.",
+          message: "⚠️ Trùng lịch học với yêu cầu khác đã gửi cho gia sư này.",
         });
       }
     }
 
-    // 📨 Thêm yêu cầu mới
+    // 📨 Lưu yêu cầu mới
     await pool.query(
       `INSERT INTO requests (student_id, tutor_id, class_id, subject, message, status)
        VALUES (?, ?, ?, ?, ?, 'PENDING')`,
       [studentId, tutor_id, class_id, subject, message || ""]
     );
 
-    // 🔔 Gửi thông báo cho đối phương
-    await pool.query(
-      `INSERT INTO notifications (user_id, title, message, type)
-       VALUES (?, ?, ?, 'REQUEST')`,
-      [
-        receiver_id,
-        sender_role === "student" ? "Yêu cầu học mới" : "Yêu cầu dạy mới",
-        sender_role === "student"
-          ? "Một học viên vừa gửi yêu cầu học cho bạn."
-          : "Một gia sư vừa gửi yêu cầu dạy lớp của bạn.",
-      ]
+    const [tutorUser] = await pool.query(
+      "SELECT user_id FROM tutors WHERE tutor_id=?",
+      [receiver_id]
     );
+    const tutorUserId = tutorUser[0]?.user_id || null;
+
+    if (tutorUserId) {
+      // 🟢 Thông báo cho gia sư
+      await pool.query(
+        `INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
+         VALUES (?, ?, ?, 'CLASS_UPDATE', 0, NOW())`,
+        [
+          tutorUserId,
+          "Học viên mới gửi yêu cầu dạy",
+          `Một học viên vừa gửi yêu cầu dạy cho lớp "${subject}" (Mã lớp: ${class_id}).`,
+        ]
+      );
+
+      // 🟢 Cho học viên (xác nhận gửi thành công)
+      await pool.query(
+        `INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
+         VALUES (?, ?, ?, 'SYSTEM', 0, NOW())`,
+        [
+          studentId,
+          "Đã gửi yêu cầu dạy thành công",
+          `Bạn đã gửi yêu cầu dạy đến gia sư (Mã lớp: ${class_id}).`,
+        ]
+      );
+    } else {
+      // 🟢 Trường hợp tutor gửi yêu cầu dạy cho student
+      await pool.query(
+        `INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
+         VALUES (?, ?, ?, 'CLASS_UPDATE', 0, NOW())`,
+        [
+          receiver_id,
+          "Gia sư mới gửi yêu cầu dạy",
+          `Một gia sư vừa gửi yêu cầu dạy cho lớp "${subject}" (Mã lớp: ${class_id}).`,
+        ]
+      );
+    }
 
     res.json({ success: true, message: "✅ Gửi yêu cầu thành công!" });
   } catch (err) {
@@ -257,7 +254,7 @@ router.post("/apply", verifyToken, requireRole(["tutor"]), async (req, res) => {
     // ✅ Thông báo học viên
     await pool.query(
       `INSERT INTO notifications (user_id, title, message, type)
-       VALUES (?, 'Gia sư ứng tuyển', 'Một gia sư vừa ứng tuyển lớp của bạn.', 'REQUEST')`,
+       VALUES (?, 'Gia sư ứng tuyển', 'Một gia sư vừa ứng tuyển lớp của bạn.', 'CLASS_UPDATE')`,
       [student_id]
     );
 
@@ -319,7 +316,7 @@ router.put("/:id", verifyToken, async (req, res) => {
 
     await pool.query(
       `INSERT INTO notifications (user_id, title, message, type)
-       VALUES (?, ?, ?, 'REQUEST')`,
+       VALUES (?, ?, ?, 'CLASS_UPDATE')`,
       [
         student_id,
         status === "APPROVED"
@@ -373,5 +370,26 @@ router.get("/", verifyToken, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+// backend/src/routes/requests.js
+router.get(
+  "/check/:class_id",
+  verifyToken,
+  requireRole(["tutor"]),
+  async (req, res) => {
+    try {
+      const [rows] = await pool.query(
+        `SELECT request_id FROM requests 
+       WHERE tutor_id = (SELECT tutor_id FROM tutors WHERE user_id = ?) 
+       AND class_id = ?`,
+        [req.user.user_id, req.params.class_id]
+      );
+      res.json({ applied: rows.length > 0 });
+    } catch (err) {
+      console.error("❌ Lỗi kiểm tra ứng tuyển:", err);
+      res.status(500).json({ success: false, applied: false });
+    }
+  }
+);
 
 export default router;

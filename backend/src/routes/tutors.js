@@ -109,46 +109,75 @@ router.get("/", async (req, res) => {
       priceMax,
       status = "APPROVED",
       page = 1,
+      limit = 10,
     } = req.query;
 
-    let sql = `
-      SELECT tutor_id, full_name, avatar, city, subject, hourly_rate, lat, lng
-      FROM tutors WHERE 1=1
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const offset = (pageNum - 1) * limitNum;
+
+    // 🧩 Base query
+    let baseSql = `
+      FROM tutors 
+      WHERE 1=1
     `;
     const params = [];
 
+    // ✅ Lọc dữ liệu
     if (subject) {
-      sql += " AND subject LIKE ?";
+      baseSql += " AND subject LIKE ?";
       params.push(`%${subject}%`);
     }
     if (city) {
-      sql += " AND city LIKE ?";
+      baseSql += " AND city LIKE ?";
       params.push(`%${city}%`);
     }
     if (priceMin) {
-      sql += " AND hourly_rate >= ?";
+      baseSql += " AND hourly_rate >= ?";
       params.push(priceMin);
     }
     if (priceMax) {
-      sql += " AND hourly_rate <= ?";
+      baseSql += " AND hourly_rate <= ?";
       params.push(priceMax);
     }
     if (status) {
-      sql += " AND status = ?";
+      baseSql += " AND status = ?";
       params.push(status);
     }
 
-    sql += " ORDER BY tutor_id DESC LIMIT 10 OFFSET ?";
-    params.push((page - 1) * 10);
+    // ✅ Tổng số dòng
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) AS total ${baseSql}`,
+      params
+    );
 
-    const [rows] = await pool.query(sql, params);
-    res.json({ success: true, data: rows });
+    // ✅ Dữ liệu trang hiện tại
+    const [rows] = await pool.query(
+      `
+      SELECT tutor_id, full_name, avatar, city, subject, hourly_rate, lat, lng, university, major, status
+      ${baseSql}
+      ORDER BY tutor_id DESC
+      LIMIT ? OFFSET ?
+      `,
+      [...params, limitNum, offset]
+    );
+
+    // ✅ Trả kết quả có metadata
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(total / limitNum),
+        totalItems: total,
+        limit: limitNum,
+      },
+    });
   } catch (err) {
     console.error("❌ Tutors list error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
-
 /* ============================================================
    ⚙️ 6. GIA SƯ – Lấy danh sách học viên (có tọa độ)
 ============================================================ */

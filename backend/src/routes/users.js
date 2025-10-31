@@ -1,21 +1,45 @@
-// src/routes/users.js
 import express from "express";
 import bcrypt from "bcryptjs";
 import { pool } from "../config/db.js";
-import { verifyToken, requireRole } from "../middlewares/auth.js";
+import { verifyToken, requireRoles } from "../middlewares/auth.js";
 
 const router = express.Router();
 
 /**
- * GET /api/users
- * Admin: lấy danh sách tất cả users
+ * 🧩 GET /api/users
+ * Admin: lấy danh sách tất cả users (có phân trang)
+ * Query: ?page=1&limit=10
  */
-router.get("/", verifyToken, requireRole(["admin"]), async (req, res) => {
+router.get("/", verifyToken, requireRoles(["admin"]), async (req, res) => {
   try {
+    // Lấy tham số phân trang
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const offset = (page - 1) * limit;
+
+    // Lấy dữ liệu
     const [rows] = await pool.query(
-      "SELECT user_id, full_name, email, role, referral_code, created_at FROM users"
+      `SELECT user_id, full_name, email, role, referral_code, created_at
+       FROM users
+       ORDER BY user_id ASC
+       LIMIT ? OFFSET ?`,
+      [limit, offset]
     );
-    res.json(rows);
+
+    // Tính tổng
+    const [[{ total }]] = await pool.query(
+      "SELECT COUNT(*) AS total FROM users"
+    );
+
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+      },
+    });
   } catch (err) {
     console.error("Users list error:", err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -23,7 +47,7 @@ router.get("/", verifyToken, requireRole(["admin"]), async (req, res) => {
 });
 
 /**
- * GET /api/users/:id
+ * 🧩 GET /api/users/:id
  * Admin hoặc chính chủ user_id
  */
 router.get("/:id", verifyToken, async (req, res) => {
@@ -41,7 +65,7 @@ router.get("/:id", verifyToken, async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
 
-    res.json(rows[0]);
+    res.json({ success: true, data: rows[0] });
   } catch (err) {
     console.error("User detail error:", err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -49,7 +73,7 @@ router.get("/:id", verifyToken, async (req, res) => {
 });
 
 /**
- * PUT /api/users/:id
+ * 🧩 PUT /api/users/:id
  * Admin hoặc chính chủ update profile
  */
 router.put("/:id", verifyToken, async (req, res) => {
@@ -93,13 +117,13 @@ router.put("/:id", verifyToken, async (req, res) => {
 });
 
 /**
- * PATCH /api/users/:id/role
+ * 🧩 PATCH /api/users/:id/role
  * Admin thay đổi role (student/tutor/admin)
  */
 router.patch(
   "/:id/role",
   verifyToken,
-  requireRole(["admin"]),
+  requireRoles(["admin"]),
   async (req, res) => {
     try {
       const { role } = req.body;
@@ -113,6 +137,7 @@ router.patch(
         role,
         req.params.id,
       ]);
+
       res.json({ success: true, message: "Role updated successfully" });
     } catch (err) {
       console.error("Role update error:", err);

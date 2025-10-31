@@ -296,12 +296,12 @@ export default function TutorPayments() {
                         </button>
                       </div>
 
-                      <div className="mt-6 text-sm text-gray-500 border-t pt-3">
+                      {/* <div className="mt-6 text-sm text-gray-500 border-t pt-3">
                         Số dư ví hiện tại:{" "}
                         <b className="text-green-600">
                           {walletBalance.toLocaleString("vi-VN")} VNĐ
                         </b>
-                      </div>
+                      </div> */}
                     </div>
                   );
                 })()

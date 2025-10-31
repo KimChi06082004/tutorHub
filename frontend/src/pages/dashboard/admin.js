@@ -1,16 +1,33 @@
-// frontend/src/pages/dashboard/admin.js
 import { useState, useEffect } from "react";
 import api from "../../utils/api";
 import Navbar from "../../components/Navbar";
 import ClassApprovals from "../admin/ClassApprovals";
-import TutorApproval from "../admin/tutors-approval"; // ✅ import giao diện quản lý gia sư
+import TutorApproval from "../admin/tutors-approval";
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState("users");
+
+  // ======= STATE =======
   const [users, setUsers] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [tutors, setTutors] = useState([]);
+
   const [complaints, setComplaints] = useState([]);
   const [payouts, setPayouts] = useState([]);
   const [token, setToken] = useState(null);
+
+  // ======= Pagination =======
+  const [pageUsers, setPageUsers] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(1);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  const [pageClasses, setPageClasses] = useState(1);
+  const [totalClasses, setTotalClasses] = useState(1);
+  const [loadingClasses, setLoadingClasses] = useState(false);
+
+  const [pageTutors, setPageTutors] = useState(1);
+  const [totalTutors, setTotalTutors] = useState(1);
+  const [loadingTutors, setLoadingTutors] = useState(false);
 
   // ✅ Lấy token sau khi render client
   useEffect(() => {
@@ -23,18 +40,61 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  // ✅ Load dữ liệu theo tab
+  // ✅ Load dữ liệu theo tab hoặc phân trang
   useEffect(() => {
     if (!token) return;
-    if (tab === "users") loadUsers();
+    if (tab === "users") loadUsers(pageUsers);
+    if (tab === "classes") loadClasses(pageClasses);
+    if (tab === "tutors") loadTutors(pageTutors);
     if (tab === "complaints") loadComplaints();
     if (tab === "payouts") loadPayouts();
-  }, [tab, token]);
+  }, [tab, token, pageUsers, pageClasses, pageTutors]);
 
-  // ====== API ======
-  const loadUsers = async () => {
-    const res = await api.get("/users");
-    setUsers(res.data);
+  // ====== API CALLS ======
+  const loadUsers = async (page = 1) => {
+    try {
+      setLoadingUsers(true);
+      const res = await api.get(`/users?page=${page}&limit=5`);
+      if (res.data.success) {
+        setUsers(res.data.data);
+        setTotalUsers(res.data.pagination.totalPages);
+      } else {
+        setUsers([]);
+      }
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const loadClasses = async (page = 1) => {
+    try {
+      setLoadingClasses(true);
+      // ✅ Sửa route: gọi /classes/admin thay vì /classes
+      const res = await api.get(`/classes/admin?page=${page}&limit=5`);
+      if (res.data.success) {
+        setClasses(res.data.data);
+        setTotalClasses(res.data.pagination?.totalPages || 1);
+      } else {
+        setClasses([]);
+      }
+    } finally {
+      setLoadingClasses(false);
+    }
+  };
+
+  const loadTutors = async (page = 1) => {
+    try {
+      setLoadingTutors(true);
+      const res = await api.get(`/tutors?page=${page}&limit=5`);
+      if (res.data.success) {
+        setTutors(res.data.data);
+        setTotalTutors(res.data.pagination.totalPages);
+      } else {
+        setTutors([]);
+      }
+    } finally {
+      setLoadingTutors(false);
+    }
   };
 
   const loadComplaints = async () => {
@@ -59,6 +119,7 @@ export default function AdminDashboard() {
     loadPayouts();
   };
 
+  // ======================= UI =======================
   if (!token) {
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-600 text-lg">
@@ -76,73 +137,40 @@ export default function AdminDashboard() {
           🛠️ Admin Dashboard
         </h2>
 
-        {/* Thanh menu tab */}
+        {/* ======================= TAB MENU ======================= */}
         <nav className="flex justify-center gap-3 mb-8">
-          <button
-            onClick={() => setTab("users")}
-            className={`px-4 py-2 rounded font-medium ${
-              tab === "users"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            👤 Users
-          </button>
-          <button
-            onClick={() => setTab("classes")}
-            className={`px-4 py-2 rounded font-medium ${
-              tab === "classes"
-                ? "bg-green-600 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            📚 Classes
-          </button>
-          <button
-            onClick={() => setTab("tutors")}
-            className={`px-4 py-2 rounded font-medium ${
-              tab === "tutors"
-                ? "bg-yellow-500 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            📋 Tutors
-          </button>
-          <button
-            onClick={() => setTab("complaints")}
-            className={`px-4 py-2 rounded font-medium ${
-              tab === "complaints"
-                ? "bg-red-500 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            ⚠️ Complaints
-          </button>
-          <button
-            onClick={() => setTab("payouts")}
-            className={`px-4 py-2 rounded font-medium ${
-              tab === "payouts"
-                ? "bg-indigo-500 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            💵 Payouts
-          </button>
+          {[
+            ["users", "👤 Users", "bg-blue-600"],
+            ["classes", "📚 Classes", "bg-green-600"],
+            ["tutors", "📋 Tutors", "bg-yellow-500"],
+            ["complaints", "⚠️ Complaints", "bg-red-500"],
+            ["payouts", "💵 Payouts", "bg-indigo-500"],
+          ].map(([key, label, color]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`px-4 py-2 rounded font-medium transition ${
+                tab === key
+                  ? `${color} text-white`
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </nav>
 
-        {/* ========== TAB HIỂN THỊ ========== */}
-
-        {/* 👤 USERS */}
+        {/* ======================= USERS ======================= */}
         {tab === "users" && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-xl font-semibold mb-4 text-gray-800">
               👥 Danh sách người dùng
             </h3>
-            {users.length === 0 ? (
-              <p className="text-gray-500 text-center">
-                Không có người dùng nào.
+            {loadingUsers ? (
+              <p className="text-center text-gray-500 py-4">
+                ⏳ Đang tải dữ liệu...
               </p>
-            ) : (
+            ) : Array.isArray(users) && users.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full border text-sm border-gray-200 rounded-lg">
                   <thead className="bg-blue-100 text-gray-700">
@@ -179,110 +207,104 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+
+                {/* ✅ Pagination Users */}
+                <Pagination
+                  page={pageUsers}
+                  total={totalUsers}
+                  onPrev={() => setPageUsers((p) => p - 1)}
+                  onNext={() => setPageUsers((p) => p + 1)}
+                />
               </div>
+            ) : (
+              <p className="text-gray-500 text-center">
+                Không có người dùng nào.
+              </p>
             )}
           </div>
         )}
 
-        {/* 📚 CLASSES */}
+        {/* ======================= CLASSES ======================= */}
         {tab === "classes" && (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <ClassApprovals />
+            <h3 className="text-xl font-semibold mb-4 text-gray-800">
+              📚 Quản lý lớp học
+            </h3>
+
+            {loadingClasses ? (
+              <p className="text-center text-gray-500 py-4">
+                ⏳ Đang tải dữ liệu...
+              </p>
+            ) : (
+              <ClassApprovals classes={classes} />
+            )}
+
+            <Pagination
+              page={pageClasses}
+              total={totalClasses}
+              onPrev={() => setPageClasses((p) => p - 1)}
+              onNext={() => setPageClasses((p) => p + 1)}
+            />
           </div>
         )}
 
-        {/* 📋 TUTORS */}
+        {/* ======================= TUTORS ======================= */}
         {tab === "tutors" && (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <TutorApproval />
-          </div>
-        )}
-
-        {/* ⚠️ COMPLAINTS */}
-        {tab === "complaints" && (
-          <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-xl font-semibold mb-4 text-gray-800">
-              ⚠️ Khiếu nại người dùng
+              📋 Danh sách gia sư
             </h3>
-            {complaints.length === 0 ? (
-              <p className="text-gray-500 text-center">
-                Không có khiếu nại nào.
+
+            {loadingTutors ? (
+              <p className="text-center text-gray-500 py-4">
+                ⏳ Đang tải dữ liệu...
               </p>
             ) : (
-              <ul className="divide-y divide-gray-200">
-                {complaints.map((cp) => (
-                  <li key={cp.complaint_id} className="py-3">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium text-gray-800">
-                          #{cp.complaint_id} – {cp.title}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Trạng thái: {cp.status}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() =>
-                          resolveComplaint(cp.complaint_id, "Đã xử lý")
-                        }
-                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
-                      >
-                        ✅ Đánh dấu đã xử lý
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <TutorApproval tutors={tutors} />
             )}
-          </div>
-        )}
 
-        {/* 💵 PAYOUTS */}
-        {tab === "payouts" && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-xl font-semibold mb-4 text-gray-800">
-              💵 Thanh toán gia sư
-            </h3>
-            {payouts.length === 0 ? (
-              <p className="text-gray-500 text-center">
-                Không có giao dịch thanh toán.
-              </p>
-            ) : (
-              <ul className="divide-y divide-gray-200">
-                {payouts.map((p) => (
-                  <li key={p.payout_id} className="py-3 flex justify-between">
-                    <div>
-                      <p className="font-medium text-gray-800">
-                        #{p.payout_id} – Tutor {p.tutor_id}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {p.amount.toLocaleString()}đ – Trạng thái:{" "}
-                        <span
-                          className={`font-medium ${
-                            p.status === "PAID"
-                              ? "text-green-600"
-                              : "text-yellow-600"
-                          }`}
-                        >
-                          {p.status}
-                        </span>
-                      </p>
-                    </div>
-                    {p.status === "PENDING" && (
-                      <button
-                        onClick={() => payoutTutor(p.payout_id, p.amount)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded text-sm"
-                      >
-                        💰 Thanh toán
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <Pagination
+              page={pageTutors}
+              total={totalTutors}
+              onPrev={() => setPageTutors((p) => p - 1)}
+              onNext={() => setPageTutors((p) => p + 1)}
+            />
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ✅ Component phân trang tái sử dụng
+function Pagination({ page, total, onPrev, onNext }) {
+  return (
+    <div className="flex justify-center items-center gap-2 mt-3 pb-2">
+      <button
+        disabled={page === 1}
+        onClick={onPrev}
+        className={`px-2 py-1 rounded border text-sm font-medium transition ${
+          page === 1
+            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+            : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+        }`}
+      >
+        ◀
+      </button>
+      <span className="text-gray-700 text-sm font-medium">
+        Trang {page} / {total}
+      </span>
+      <button
+        disabled={page === total}
+        onClick={onNext}
+        className={`px-2 py-1 rounded border text-sm font-medium transition ${
+          page === total
+            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+            : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+        }`}
+      >
+        ▶
+      </button>
     </div>
   );
 }

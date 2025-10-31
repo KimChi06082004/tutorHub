@@ -23,7 +23,7 @@ import ratingRoutes from "./routes/ratings.js";
 import uploadRoutes from "./routes/upload.js";
 import requestRoutes from "./routes/requests.js";
 import tutorSelectedRouter from "./routes/tutorSelected.js";
-
+import chatbotRoutes from "./routes/chatbot.js";
 dotenv.config();
 
 const app = express();
@@ -54,7 +54,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/ratings", ratingRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/tutor/selected-classes", tutorSelectedRouter);
-
+app.use("/api/chatbot", chatbotRoutes);
 // ✅ Static file (ảnh upload)
 app.use("/uploads", express.static("uploads"));
 

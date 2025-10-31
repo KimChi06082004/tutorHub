@@ -1,13 +1,20 @@
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { logout, getAuthUser } from "../utils/auth";
 import Link from "next/link";
+import api from "../utils/api";
 
 export default function TopbarTutor() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [mounted, setMounted] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
+
+  // 🟢 Thông báo
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [latestId, setLatestId] = useState(null); // ✅ thêm
+  const audioRef = useRef(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -16,6 +23,38 @@ export default function TopbarTutor() {
       setMounted(true);
     }
   }, []);
+
+  // 🟢 Lấy thông báo định kỳ (chỉ khi đã mount)
+  useEffect(() => {
+    if (!mounted) return;
+
+    const fetchNotifications = async () => {
+      try {
+        const res = await api.get("/notifications/tutor"); // ✅ đúng endpoint
+        if (res.data.success) {
+          const data = res.data.data || [];
+          const unread = data.filter((n) => !n.is_read);
+
+          // 🔔 Kiểm tra nếu có thông báo mới (so ID)
+          if (data.length > 0 && data[0].notification_id !== latestId) {
+            if (latestId !== null) {
+              audioRef.current?.play().catch(() => {});
+            }
+            setLatestId(data[0].notification_id);
+          }
+
+          setNotifications(data);
+          setUnreadCount(unread.length);
+        }
+      } catch (err) {
+        console.error("❌ Lỗi tải thông báo:", err);
+      }
+    };
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 15000);
+    return () => clearInterval(interval);
+  }, [mounted]); // ✅ bỏ unreadCount
 
   if (!mounted) return null;
 
@@ -179,9 +218,68 @@ export default function TopbarTutor() {
           </div>
         </div>
 
-        {/* --- USER INFO --- */}
-        <div className="flex items-center space-x-3">
-          <span>🔔</span>
+        {/* --- USER INFO + THÔNG BÁO --- */}
+        <div className="flex items-center space-x-3 relative">
+          {/* 🔔 Thông báo */}
+          <div className="relative">
+            <button
+              onClick={() => toggleMenu("notifications")}
+              className="relative text-2xl"
+            >
+              🔔
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-2 bg-red-500 text-xs px-1 rounded-full">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            {openMenu === "notifications" && (
+              <div className="absolute right-0 mt-2 w-80 bg-white text-black rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
+                <div className="p-3 font-semibold bg-gray-100 border-b">
+                  Thông báo gần đây
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <p className="p-4 text-gray-500 text-sm text-center">
+                      Không có thông báo nào
+                    </p>
+                  ) : (
+                    notifications.slice(0, 5).map((noti) => (
+                      <div
+                        key={noti.notification_id}
+                        className={`p-3 border-b cursor-pointer ${
+                          noti.is_read ? "bg-white" : "bg-blue-50"
+                        } hover:bg-blue-100`}
+                        onClick={() => {
+                          router.push("/tutor/notifications");
+                          setOpenMenu(null);
+                        }}
+                      >
+                        <p className="font-medium text-[#003366]">
+                          {noti.title}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {new Date(noti.created_at).toLocaleString("vi-VN")}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="text-center py-2 border-t bg-gray-50">
+                  <Link
+                    href="/tutor/notifications"
+                    className="text-blue-600 text-sm font-medium hover:underline"
+                    onClick={() => setOpenMenu(null)}
+                  >
+                    Xem tất cả thông báo →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* USER + Logout */}
           <span className="text-sm font-medium">
             {user?.full_name || "Gia sư"}
           </span>
@@ -194,6 +292,9 @@ export default function TopbarTutor() {
           >
             Logout
           </button>
+
+          {/* 🎵 Âm thanh */}
+          <audio ref={audioRef} src="/sounds/notification.mp3" preload="auto" />
         </div>
       </div>
     </header>
