@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { logout, getAuthUser } from "../utils/auth";
 import Link from "next/link";
 import api from "../utils/api";
+import toast from "react-hot-toast"; // ✅ thêm
 
 export default function TopbarTutor() {
   const router = useRouter();
@@ -13,7 +14,7 @@ export default function TopbarTutor() {
   // 🟢 Thông báo
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [latestId, setLatestId] = useState(null); // ✅ thêm
+  const [latestId, setLatestId] = useState(null);
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -24,18 +25,28 @@ export default function TopbarTutor() {
     }
   }, []);
 
+  // 🧠 Hàm hiện thông báo “Đang phát triển”
+  const notifyDeveloping = () =>
+    toast("🚧 Tính năng đang được phát triển!", {
+      icon: "🛠️",
+      style: {
+        borderRadius: "10px",
+        background: "#003366",
+        color: "#fff",
+      },
+    });
+
   // 🟢 Lấy thông báo định kỳ (chỉ khi đã mount)
   useEffect(() => {
     if (!mounted) return;
 
     const fetchNotifications = async () => {
       try {
-        const res = await api.get("/notifications/tutor"); // ✅ đúng endpoint
+        const res = await api.get("/notifications");
         if (res.data.success) {
           const data = res.data.data || [];
           const unread = data.filter((n) => !n.is_read);
 
-          // 🔔 Kiểm tra nếu có thông báo mới (so ID)
           if (data.length > 0 && data[0].notification_id !== latestId) {
             if (latestId !== null) {
               audioRef.current?.play().catch(() => {});
@@ -54,7 +65,7 @@ export default function TopbarTutor() {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 15000);
     return () => clearInterval(interval);
-  }, [mounted]); // ✅ bỏ unreadCount
+  }, [mounted]);
 
   if (!mounted) return null;
 
@@ -67,7 +78,6 @@ export default function TopbarTutor() {
       <div className="flex items-center justify-between px-8 py-3">
         {/* --- Logo + Menu --- */}
         <div className="flex items-center space-x-8">
-          {/* LOGO */}
           <div
             className="flex items-center cursor-pointer select-none ml-2"
             onClick={() => router.push("/tutor/classes/active")}
@@ -87,7 +97,7 @@ export default function TopbarTutor() {
             </div>
           </div>
 
-          {/* MENU BUTTONS */}
+          {/* --- MENU --- */}
           <div className="flex items-center space-x-3 ml-6">
             {/* 📑 Quản lý ứng tuyển */}
             <div className="relative">
@@ -99,13 +109,17 @@ export default function TopbarTutor() {
               </button>
               {openMenu === "select" && (
                 <div className="absolute left-0 bg-[#004080] text-white rounded-md mt-1 w-56 shadow-md">
-                  <Link
-                    href="/tutor/classes/posted"
-                    className="block px-4 py-2 hover:bg-[#0059b3]"
-                    onClick={() => setOpenMenu(null)}
+                  {/* ✅ Khi click → hiện “Đang phát triển” */}
+                  <button
+                    onClick={() => {
+                      setOpenMenu(null);
+                      notifyDeveloping();
+                    }}
+                    className="block w-full text-left px-4 py-2 hover:bg-[#0059b3]"
                   >
                     Lớp đã ứng tuyển
-                  </Link>
+                  </button>
+
                   <Link
                     href="/tutor/SelectedClasses"
                     className="block px-4 py-2 hover:bg-[#0059b3]"
@@ -190,20 +204,25 @@ export default function TopbarTutor() {
               </button>
               {openMenu === "folder" && (
                 <div className="absolute left-0 bg-[#004080] text-white rounded-md mt-1 w-56 shadow-md">
-                  <Link
-                    href="/tutor/files/homework"
-                    className="block px-4 py-2 hover:bg-[#0059b3]"
-                    onClick={() => setOpenMenu(null)}
+                  {/* ✅ Hiển thị “Đang phát triển” */}
+                  <button
+                    onClick={() => {
+                      setOpenMenu(null);
+                      notifyDeveloping();
+                    }}
+                    className="block w-full text-left px-4 py-2 hover:bg-[#0059b3]"
                   >
                     ✏️ Bài tập đã giao
-                  </Link>
-                  <Link
-                    href="/tutor/files/docs"
-                    className="block px-4 py-2 hover:bg-[#0059b3]"
-                    onClick={() => setOpenMenu(null)}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setOpenMenu(null);
+                      notifyDeveloping();
+                    }}
+                    className="block w-full text-left px-4 py-2 hover:bg-[#0059b3]"
                   >
                     📘 Tài liệu đã giao
-                  </Link>
+                  </button>
                 </div>
               )}
             </div>

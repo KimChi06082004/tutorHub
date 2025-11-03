@@ -1,4 +1,3 @@
-// frontend/src/pages/login.js
 import { useState } from "react";
 import { useRouter } from "next/router";
 import api from "../utils/api";
@@ -27,22 +26,16 @@ export default function Login() {
 
       if (res.data.success) {
         const { user, accessToken, refreshToken, token } = res.data;
-
-        // ✅ Ưu tiên accessToken, fallback token cũ nếu chưa cập nhật backend
         const access = accessToken || token;
+
         if (access) localStorage.setItem("accessToken", access);
         if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
 
-        // ✅ Lưu thông tin người dùng (tên, vai trò, email)
         setAuthUser(user, access);
-
         setMessage("✅ Đăng nhập thành công!");
         setSuccess(true);
-
-        // Reset form
         setForm({ email: "", password: "" });
 
-        // ✅ Chuyển hướng dựa vào vai trò
         setTimeout(() => {
           switch (user.role) {
             case "admin":
@@ -71,37 +64,50 @@ export default function Login() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-semibold text-center mb-4 text-[#003366]">
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-200">
+      <div className="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md transform transition duration-300 hover:scale-[1.02]">
+        <h2 className="text-3xl font-bold text-center mb-6 text-[#003366] flex items-center justify-center gap-2">
           🔐 Đăng nhập hệ thống
         </h2>
 
-        <form onSubmit={handleSubmit} className="flex flex-col space-y-3">
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={handleChange}
-            className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-400 outline-none"
-            required
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Mật khẩu"
-            value={form.password}
-            onChange={handleChange}
-            className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-400 outline-none"
-            required
-          />
+        <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
+          <div>
+            <label className="block text-gray-600 font-medium mb-1">
+              Email đăng nhập
+            </label>
+            <input
+              type="email"
+              name="email"
+              placeholder="Nhập email của bạn"
+              value={form.email}
+              onChange={handleChange}
+              className="border border-gray-300 rounded-lg p-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none w-full transition"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-600 font-medium mb-1">
+              Mật khẩu
+            </label>
+            <input
+              type="password"
+              name="password"
+              placeholder="Nhập mật khẩu"
+              value={form.password}
+              onChange={handleChange}
+              className="border border-gray-300 rounded-lg p-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none w-full transition"
+              required
+            />
+          </div>
 
           <button
             type="submit"
             disabled={loading}
-            className={`p-3 rounded-lg font-semibold text-white transition ${
-              loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+            className={`py-3 rounded-lg font-semibold text-white text-lg shadow-md transition ${
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
             }`}
           >
             {loading ? "⏳ Đang đăng nhập..." : "Đăng nhập"}
@@ -118,11 +124,22 @@ export default function Login() {
           </p>
         )}
 
-        <p className="text-center mt-4 text-gray-600">
+        {/* ✅ Nút Quên mật khẩu */}
+        <p className="text-center mt-4">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
+          >
+            🔑 Quên mật khẩu?
+          </Link>
+        </p>
+
+        {/* Đăng ký */}
+        <p className="text-center mt-3 text-gray-600 text-sm">
           Chưa có tài khoản?{" "}
           <Link
-            href="/register/"
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            href="/register"
+            className="text-blue-600 hover:text-blue-800 font-medium underline"
           >
             Đăng ký
           </Link>

@@ -1,16 +1,16 @@
 import express from "express";
 import fetch from "node-fetch";
-import { verifyToken } from "../middlewares/auth.js";
+import jwt from "jsonwebtoken"; // ⚙️ cần thêm để đọc token nếu có
 
 const router = express.Router();
 const cache = new Map();
 
 /* =========================================================
    🤖 Chatbot hỗ trợ DạyThêm.com (Gemini Flash)
-   - Phân biệt role: student / tutor / admin
-   - Chặn chi tiết khi role không hợp lệ
+   - Phân biệt role: student / tutor / admin / guest
+   - Hoạt động cả khi chưa đăng nhập
 ========================================================= */
-router.post("/", verifyToken, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { question, role } = req.body;
 
@@ -26,8 +26,22 @@ router.post("/", verifyToken, async (req, res) => {
         .status(500)
         .json({ success: false, message: "Thiếu GEMINI_API_KEY trong .env" });
 
-    // ✅ 1️⃣ Admin không được phép dùng chatbot
-    if (role === "admin") {
+    // ✅ 1️⃣ Kiểm tra token thủ công (nếu có)
+    let user = null;
+    try {
+      const token = req.headers.authorization?.split(" ")[1];
+      if (token) {
+        user = jwt.verify(token, process.env.JWT_SECRET);
+      }
+    } catch (err) {
+      // Không có token hoặc token sai → bỏ qua (guest)
+    }
+
+    // Nếu không có role → mặc định là guest
+    const userRole = role || user?.role || "guest";
+
+    // ❌ 2️⃣ Admin không được phép dùng chatbot
+    if (userRole === "admin") {
       return res.json({
         success: false,
         answer: "Chatbot không khả dụng cho tài khoản admin.",
@@ -59,7 +73,10 @@ router.post("/", verifyToken, async (req, res) => {
       "trở thành gia sư",
     ];
 
-    if (role === "student" && tutorKeywords.some((kw) => lowerQ.includes(kw))) {
+    if (
+      userRole === "student" &&
+      tutorKeywords.some((kw) => lowerQ.includes(kw))
+    ) {
       return res.json({
         success: true,
         answer:
@@ -83,7 +100,10 @@ router.post("/", verifyToken, async (req, res) => {
       "hướng dẫn tạo lớp học",
     ];
 
-    if (role === "tutor" && classKeywords.some((kw) => lowerQ.includes(kw))) {
+    if (
+      userRole === "tutor" &&
+      classKeywords.some((kw) => lowerQ.includes(kw))
+    ) {
       return res.json({
         success: true,
         answer:
@@ -97,7 +117,6 @@ router.post("/", verifyToken, async (req, res) => {
     const GEMINI_ENDPOINT =
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
 
-    // Prompt thông minh phù hợp hệ thống DạyThêm
     const promptText = `
 Bạn là chatbot hỗ trợ người dùng trên website DayThem — nền tảng kết nối giữa học viên (student) và gia sư (tutor).
 
@@ -134,14 +153,14 @@ Trả lời thân thiện, ngắn gọn, chính xác theo vai trò của ngườ
 Câu hỏi: ${question}
 `;
 
-    // ⚙️ Cache (tránh gọi lại API)
-    const cacheKey = `${role}:${question.trim().toLowerCase()}`;
+    // ⚙️ Cache tránh gọi API lặp
+    const cacheKey = `${userRole}:${question.trim().toLowerCase()}`;
     if (cache.has(cacheKey)) {
       console.log("⚡ Cache hit:", cacheKey);
       return res.json({ success: true, answer: cache.get(cacheKey) });
     }
 
-    // 🕒 Timeout + Retry logic
+    // 🕒 Timeout + Retry
     let data;
     const maxRetries = 3;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -175,7 +194,7 @@ Câu hỏi: ${question}
       }
     }
 
-    // 🧹 Làm sạch text (loại bỏ Markdown)
+    // 🧹 Làm sạch text
     let answer =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "Xin lỗi, tôi chưa có câu trả lời cho câu hỏi này.";
@@ -188,7 +207,6 @@ Câu hỏi: ${question}
       .replace(/\s{2,}/g, " ")
       .trim();
 
-    // 💾 Lưu cache
     cache.set(cacheKey, answer);
     if (cache.size > 50) cache.delete(cache.keys().next().value);
 

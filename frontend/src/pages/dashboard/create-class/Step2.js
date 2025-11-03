@@ -14,7 +14,7 @@ export default function Step2() {
     education: "",
     experience: "",
     gender: [],
-    ageRange: [18, 60],
+    ageRange: "",
     bio: "",
     fee: "",
   });
@@ -123,23 +123,16 @@ export default function Step2() {
                 <label className="block font-semibold mb-1 mt-4">
                   Độ tuổi:
                 </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    className="border p-2 w-24 rounded-lg"
-                    placeholder="Từ"
-                    value={requirements.ageMin}
-                    onChange={(e) => handleChange("ageMin", e.target.value)}
-                  />
-                  <span>-</span>
-                  <input
-                    type="number"
-                    className="border p-2 w-24 rounded-lg"
-                    placeholder="Đến"
-                    value={requirements.ageMax}
-                    onChange={(e) => handleChange("ageMax", e.target.value)}
-                  />
-                </div>
+                <select
+                  className="border p-3 w-full rounded-lg"
+                  value={requirements.ageRange}
+                  onChange={(e) => handleChange("ageRange", e.target.value)}
+                >
+                  <option value="">-- Không giới hạn --</option>
+                  <option value="18-25">18–25 tuổi</option>
+                  <option value="25-40">25–40 tuổi</option>
+                  <option value="40+">Trên 40 tuổi</option>
+                </select>
               </div>
 
               {/* Cột 2 */}

@@ -99,14 +99,18 @@ router.get(
 
 /* ============================================================
    ⚙️ 5. HỌC VIÊN – Lấy danh sách gia sư (APPROVED)
+   ➕ Bổ sung lọc: subject, gender, city, price, tuổi
 ============================================================ */
 router.get("/", async (req, res) => {
   try {
     const {
       subject,
+      gender,
       city,
       priceMin,
       priceMax,
+      ageMin,
+      ageMax,
       status = "APPROVED",
       page = 1,
       limit = 10,
@@ -117,21 +121,28 @@ router.get("/", async (req, res) => {
     const offset = (pageNum - 1) * limitNum;
 
     // 🧩 Base query
-    let baseSql = `
-      FROM tutors 
-      WHERE 1=1
-    `;
+    let baseSql = `FROM tutors WHERE 1=1`;
     const params = [];
 
-    // ✅ Lọc dữ liệu
-    if (subject) {
+    // 🔍 Lọc môn học
+    if (subject && subject.trim() !== "") {
       baseSql += " AND subject LIKE ?";
       params.push(`%${subject}%`);
     }
-    if (city) {
+
+    // ⚧ Lọc giới tính
+    if (gender && gender.trim() !== "") {
+      baseSql += " AND gender = ?";
+      params.push(gender);
+    }
+
+    // 🌆 Lọc thành phố
+    if (city && city.trim() !== "") {
       baseSql += " AND city LIKE ?";
       params.push(`%${city}%`);
     }
+
+    // 💰 Lọc giá dạy
     if (priceMin) {
       baseSql += " AND hourly_rate >= ?";
       params.push(priceMin);
@@ -140,21 +151,43 @@ router.get("/", async (req, res) => {
       baseSql += " AND hourly_rate <= ?";
       params.push(priceMax);
     }
+
+    // 🎂 Lọc độ tuổi (nếu có)
+    if (ageMin || ageMax) {
+      baseSql +=
+        " AND TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) BETWEEN ? AND ?";
+      params.push(ageMin || 18);
+      params.push(ageMax || 100);
+    }
+
+    // 📜 Lọc trạng thái
     if (status) {
       baseSql += " AND status = ?";
       params.push(status);
     }
 
-    // ✅ Tổng số dòng
+    // ✅ Tổng số bản ghi
     const [[{ total }]] = await pool.query(
       `SELECT COUNT(*) AS total ${baseSql}`,
       params
     );
 
-    // ✅ Dữ liệu trang hiện tại
+    // ✅ Lấy dữ liệu trang hiện tại
     const [rows] = await pool.query(
       `
-      SELECT tutor_id, full_name, avatar, city, subject, hourly_rate, lat, lng, university, major, status
+      SELECT 
+        tutor_id,
+        full_name,
+        gender,
+        avatar,
+        city,
+        subject,
+        hourly_rate,
+        university,
+        major,
+        experience,
+        TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) AS age,
+        status
       ${baseSql}
       ORDER BY tutor_id DESC
       LIMIT ? OFFSET ?
@@ -162,7 +195,6 @@ router.get("/", async (req, res) => {
       [...params, limitNum, offset]
     );
 
-    // ✅ Trả kết quả có metadata
     res.json({
       success: true,
       data: rows,
@@ -178,6 +210,7 @@ router.get("/", async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 /* ============================================================
    ⚙️ 6. GIA SƯ – Lấy danh sách học viên (có tọa độ)
 ============================================================ */

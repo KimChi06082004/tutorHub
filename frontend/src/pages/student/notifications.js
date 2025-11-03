@@ -11,13 +11,15 @@ export default function StudentNotifications() {
   const [filter, setFilter] = useState("all"); // all | read | unread
   const router = useRouter();
 
+  // 🧩 Lấy danh sách thông báo khi load trang
   useEffect(() => {
     fetchNotifications();
   }, []);
 
   const fetchNotifications = async () => {
     try {
-      const res = await api.get("/notifications/student");
+      // ✅ Dùng endpoint chung (backend đã tự lọc theo user)
+      const res = await api.get("/notifications");
       if (res.data.success) setNotifications(res.data.data);
     } catch (err) {
       console.error("❌ Lỗi tải thông báo:", err);
@@ -26,27 +28,43 @@ export default function StudentNotifications() {
     }
   };
 
-  const handleClick = (noti) => {
-    // Nếu có link chuyển hướng thì mở
-    if (noti.link) {
-      router.push(noti.link);
-    } else {
-      // fallback cho các loại không có link cụ thể
-      if (noti.type === "NEW_TUTOR_APPLY") {
-        router.push("/student/tutor-requests");
-      } else if (noti.type === "PAYMENT_CONFIRMED") {
-        router.push("/student/payments/paid");
-      } else if (noti.type === "CLASS_CANCELLED") {
-        router.push("/student/payments/cancelled");
-      } else {
-        alert("Thông báo này không có trang chi tiết.");
-      }
-    }
+  // 📨 Khi click vào thông báo
+  const handleClick = async (noti) => {
+    try {
+      // 🔄 Cập nhật local UI trước khi gọi API (tránh delay)
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.notification_id === noti.notification_id ? { ...n, is_read: 1 } : n
+        )
+      );
 
-    // Đánh dấu đã đọc
-    api.put(`/notifications/${noti.notification_id}/read`).catch(() => {});
+      // 📬 Gửi request đánh dấu đã đọc
+      await api.put(`/notifications/${noti.notification_id}/read`);
+
+      // 🔗 Nếu có link thì điều hướng
+      if (noti.link) {
+        router.push(noti.link);
+      } else {
+        switch (noti.type) {
+          case "NEW_TUTOR_APPLY":
+            router.push("/student/tutor-requests");
+            break;
+          case "PAYMENT_CONFIRMED":
+            router.push("/student/payments/paid");
+            break;
+          case "CLASS_CANCELLED":
+            router.push("/student/payments/cancelled");
+            break;
+          default:
+            alert("Thông báo này không có trang chi tiết.");
+        }
+      }
+    } catch (err) {
+      console.error("❌ Lỗi đánh dấu đã đọc:", err);
+    }
   };
 
+  // 🎯 Lọc thông báo theo tab
   const filteredList =
     filter === "all"
       ? notifications
@@ -72,36 +90,23 @@ export default function StudentNotifications() {
 
             {/* Bộ lọc */}
             <div className="flex gap-3 mb-5">
-              <button
-                onClick={() => setFilter("all")}
-                className={`px-4 py-2 rounded-md ${
-                  filter === "all"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 hover:bg-gray-300"
-                }`}
-              >
-                Tất cả
-              </button>
-              <button
-                onClick={() => setFilter("unread")}
-                className={`px-4 py-2 rounded-md ${
-                  filter === "unread"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 hover:bg-gray-300"
-                }`}
-              >
-                Chưa đọc
-              </button>
-              <button
-                onClick={() => setFilter("read")}
-                className={`px-4 py-2 rounded-md ${
-                  filter === "read"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 hover:bg-gray-300"
-                }`}
-              >
-                Đã đọc
-              </button>
+              {[
+                { key: "all", label: "Tất cả" },
+                // { key: "unread", label: "Chưa đọc" },
+                { key: "read", label: "Đã đọc" },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setFilter(key)}
+                  className={`px-4 py-2 rounded-md ${
+                    filter === key
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 hover:bg-gray-300"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
             {/* Danh sách thông báo */}

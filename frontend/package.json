@@ -11,11 +11,13 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@headlessui/react": "^2.2.9",
+    "@heroicons/react": "^2.2.0",
     "@react-google-maps/api": "^2.20.7",
     "@stripe/stripe-js": "^8.1.0",
     "axios": "^1.12.2",
     "bootstrap": "^5.3.8",
     "browser-image-compression": "^2.0.2",
+    "emailjs-com": "^3.2.0",
     "framer-motion": "^12.23.24",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.548.0",

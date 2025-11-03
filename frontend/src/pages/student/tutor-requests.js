@@ -18,17 +18,18 @@ export default function TutorRequests() {
   if (loading) return <p className="text-center mt-10">Đang tải dữ liệu...</p>;
 
   // 🧩 Gửi phản hồi đến backend
+  // 🧩 Gửi phản hồi đến backend
   async function handleRespond(id, status) {
     try {
-      const res = await api.get("/requests");
-      alert(res.data.message);
+      const res = await api.put(`/requests/${id}/respond`, { status }); // ✅ dùng PUT, không phải GET
+      alert(res.data?.message || "✅ Cập nhật trạng thái thành công!");
 
       setRequests((prev) =>
         prev.map((r) => (r.request_id === id ? { ...r, status: status } : r))
       );
     } catch (err) {
       console.error("❌ Lỗi phản hồi:", err.response?.data || err);
-      alert("❌ Lỗi phản hồi yêu cầu!");
+      alert(err.response?.data?.message || "❌ Lỗi phản hồi yêu cầu!");
     }
   }
 

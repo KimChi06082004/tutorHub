@@ -28,7 +28,7 @@ export default function TopbarStudent() {
 
     const fetchNotifications = async () => {
       try {
-        const res = await api.get("/notifications/student");
+        const res = await api.get("/notifications");
         if (res.data.success) {
           const newNoti = res.data.data;
           const unread = newNoti.filter((n) => !n.is_read);

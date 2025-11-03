@@ -16,6 +16,10 @@ export default function StudentDashboard() {
   const [tutors, setTutors] = useState([]);
   const [showMap, setShowMap] = useState(false);
   const [subject, setSubject] = useState("");
+  const [gender, setGender] = useState("");
+  const [city, setCity] = useState("");
+  const [ageMin, setAgeMin] = useState("18");
+  const [ageMax, setAgeMax] = useState("");
   const [loading, setLoading] = useState(false);
 
   // 🧩 Phân trang
@@ -26,41 +30,44 @@ export default function StudentDashboard() {
     fetchTutors();
   }, []);
 
-  const fetchTutors = async (search = "") => {
+  const fetchTutors = async (filters = {}) => {
     setLoading(true);
     try {
-      const url = search
-        ? `/tutors?subject=${encodeURIComponent(search)}&status=APPROVED`
-        : "/tutors?status=APPROVED";
+      // 🎯 Tạo query params linh hoạt
+      const params = new URLSearchParams({
+        status: "APPROVED",
+        ...(filters.subject && { subject: filters.subject }),
+        ...(filters.gender && { gender: filters.gender }),
+        ...(filters.city && { city: filters.city }),
+        ...(filters.ageMin && { ageMin: filters.ageMin }),
+        ...(filters.ageMax && { ageMax: filters.ageMax }),
+      });
 
-      const res = await api.get(url);
+      const res = await api.get(`/tutors?${params.toString()}`);
       setTutors(res?.data?.data || []);
     } catch (err) {
-      console.error("❌ Lỗi tải tutors:", err);
+      console.error("❌ Lỗi tải danh sách gia sư:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSearch = () => {
-    setCurrentPage(1); // reset khi tìm kiếm
-    fetchTutors(subject);
+    setCurrentPage(1);
+    fetchTutors({ subject, gender, city, ageMin, ageMax });
   };
 
-  // 🧮 Tính toán phân trang
+  // 🧮 Phân trang
   const indexOfLast = currentPage * tutorsPerPage;
   const indexOfFirst = indexOfLast - tutorsPerPage;
   const currentTutors = tutors.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(tutors.length / tutorsPerPage);
 
-  const handlePrev = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
-  };
-  const handleNext = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-  };
+  const handlePrev = () => currentPage > 1 && setCurrentPage(currentPage - 1);
+  const handleNext = () =>
+    currentPage < totalPages && setCurrentPage(currentPage + 1);
 
-  // ⚙️ Lọc các tutor có tọa độ hợp lệ để truyền vào bản đồ
+  // ⚙️ Lọc các tutor có tọa độ hợp lệ cho bản đồ
   const validTutors = tutors.filter(
     (t) =>
       t.lat &&
@@ -75,11 +82,9 @@ export default function StudentDashboard() {
       <div className="desktop-only">
         <SidebarStudent />
       </div>
-
       <div className="mobile-only">
         <SidebarToggle />
       </div>
-
       <div className="desktop-only">
         <TopbarStudent />
       </div>
@@ -88,30 +93,73 @@ export default function StudentDashboard() {
       <div className="main-content p-6">
         <h2 className="text-2xl font-bold mb-4">👩‍🏫 Danh sách gia sư</h2>
 
-        {/* Ô tìm kiếm */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        {/* Bộ lọc tìm kiếm */}
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-6">
+          {/* Môn học */}
           <input
             type="text"
             placeholder="Nhập môn học (VD: Toán, Anh, Lý...)"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="border border-gray-300 rounded-lg p-3 w-full sm:w-80 focus:ring-2 focus:ring-blue-300 outline-none"
+            className="border border-gray-300 rounded-lg p-3 w-full sm:w-60 focus:ring-2 focus:ring-blue-300 outline-none"
           />
+
+          {/* Giới tính */}
+          <select
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
+            className="border border-gray-300 rounded-lg p-3 w-full sm:w-48 focus:ring-2 focus:ring-blue-300 outline-none"
+          >
+            <option value="">Tất cả giới tính</option>
+            <option value="Nam">Nam</option>
+            <option value="Nữ">Nữ</option>
+          </select>
+
+          {/* Thành phố */}
+          <input
+            type="text"
+            placeholder="Nhập thành phố (VD: Hồ Chí Minh)"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className="border border-gray-300 rounded-lg p-3 w-full sm:w-60 focus:ring-2 focus:ring-blue-300 outline-none"
+          />
+
+          {/* Tuổi từ - đến */}
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min="18"
+              max="100"
+              placeholder="Tuổi từ"
+              value={ageMin}
+              onChange={(e) => setAgeMin(e.target.value)}
+              className="border border-gray-300 rounded-lg p-3 w-24 focus:ring-2 focus:ring-blue-300 outline-none"
+            />
+            <span className="text-gray-500">-</span>
+            <input
+              type="number"
+              min="18"
+              max="100"
+              placeholder="Đến"
+              value={ageMax}
+              onChange={(e) => setAgeMax(e.target.value)}
+              className="border border-gray-300 rounded-lg p-3 w-24 focus:ring-2 focus:ring-blue-300 outline-none"
+            />
+          </div>
+
+          {/* Nút tìm kiếm */}
           <button
             onClick={handleSearch}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition w-full sm:w-auto"
           >
             {loading ? "Đang tìm..." : "🔍 Tìm kiếm"}
           </button>
         </div>
 
         {/* Danh sách gia sư + Bản đồ */}
-        <div
-          className="content-wrapper"
-          style={{ display: "flex", gap: "20px" }}
-        >
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Danh sách gia sư */}
-          <div className="tutor-list" style={{ flex: 1 }}>
+          <div className="flex-1">
             {loading ? (
               <p>⏳ Đang tải danh sách gia sư...</p>
             ) : currentTutors.length === 0 ? (
@@ -120,20 +168,24 @@ export default function StudentDashboard() {
               currentTutors.map((t) => (
                 <div
                   key={t.tutor_id}
-                  className="tutor-card border border-gray-200 rounded-xl p-4 mb-4 shadow-sm hover:shadow-md transition"
+                  className="border border-gray-200 rounded-xl p-4 mb-4 shadow-sm hover:shadow-md transition"
                 >
                   <h3 className="text-lg font-semibold text-gray-800 mb-1">
                     {t.full_name}
                   </h3>
                   <p className="text-gray-600 mb-1">
-                    🎓 {t.degree || "Đại học"} – {t.experience || 0} năm kinh
-                    nghiệm
+                    🎓 {t.university || "Đại học"} –{" "}
+                    {t.major || "Chuyên ngành không rõ"}
                   </p>
                   <p className="text-gray-600 mb-1">
                     💵{" "}
                     {t.hourly_rate
                       ? `${t.hourly_rate.toLocaleString()} đ/giờ`
                       : "Thoả thuận"}
+                  </p>
+                  <p className="text-gray-600 mb-1">
+                    ⚧ {t.gender || "Không rõ"} | 🎂{" "}
+                    {t.age ? `${t.age} tuổi` : ""}
                   </p>
                   <p className="text-gray-600 mb-2">
                     📍 {t.city || "Không rõ khu vực"}
@@ -150,13 +202,13 @@ export default function StudentDashboard() {
               ))
             )}
 
-            {/* 🔸 Phân trang nhỏ gọn góc phải */}
+            {/* Phân trang */}
             {totalPages > 1 && (
-              <div className="flex justify-end items-center mt-2 mr-2 select-none">
+              <div className="flex justify-center items-center mt-4 select-none">
                 <button
                   onClick={handlePrev}
                   disabled={currentPage === 1}
-                  className={`px-2 py-1 text-sm rounded-md transition ${
+                  className={`px-3 py-1 rounded-md ${
                     currentPage === 1
                       ? "text-gray-400 cursor-not-allowed"
                       : "text-blue-600 hover:text-blue-800"
@@ -164,13 +216,13 @@ export default function StudentDashboard() {
                 >
                   ◀
                 </button>
-                <span className="text-gray-700 text-sm font-medium mx-2">
+                <span className="mx-2 text-gray-700 text-sm font-medium">
                   {currentPage} / {totalPages}
                 </span>
                 <button
                   onClick={handleNext}
                   disabled={currentPage === totalPages}
-                  className={`px-2 py-1 text-sm rounded-md transition ${
+                  className={`px-3 py-1 rounded-md ${
                     currentPage === totalPages
                       ? "text-gray-400 cursor-not-allowed"
                       : "text-blue-600 hover:text-blue-800"
@@ -182,25 +234,25 @@ export default function StudentDashboard() {
             )}
           </div>
 
-          {/* Bản đồ (Desktop) */}
-          <div className="map-container desktop-only" style={{ flex: 1 }}>
+          {/* Bản đồ */}
+          <div className="flex-1 hidden lg:block">
             <MapWrapper role="student" tutors={validTutors} />
           </div>
         </div>
 
-        {/* Bản đồ (Mobile) */}
-        <div className="mobile-only">
+        {/* Mobile Bản đồ */}
+        <div className="lg:hidden mt-4">
           <button
-            className="floating-map-btn bg-blue-600 text-white px-5 py-2 rounded-lg mt-4"
+            className="bg-blue-600 text-white px-5 py-2 rounded-lg"
             onClick={() => setShowMap(!showMap)}
           >
             {showMap ? "Ẩn bản đồ" : "🌍 Lọc theo bản đồ Việt Nam"}
           </button>
 
           {showMap && (
-            <div className="map-overlay fixed inset-0 bg-white z-50">
+            <div className="fixed inset-0 bg-white z-50">
               <button
-                className="close-map-btn absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded"
+                className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded"
                 onClick={() => setShowMap(false)}
               >
                 ✖ Đóng
@@ -211,6 +263,8 @@ export default function StudentDashboard() {
             </div>
           )}
         </div>
+
+        <Footer />
       </div>
     </div>
   );

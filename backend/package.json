@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "Backend for Website Dạy Thêm",
   "dependencies": {
+    "@emailjs/nodejs": "^5.0.2",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dayjs": "^1.11.13",
@@ -23,6 +24,7 @@
     "mysql2": "^3.11.3",
     "node-cron": "^4.2.1",
     "node-fetch": "^3.3.2",
+    "resend": "^6.4.0",
     "stripe": "^19.1.0",
     "uuid": "^9.0.1"
   },

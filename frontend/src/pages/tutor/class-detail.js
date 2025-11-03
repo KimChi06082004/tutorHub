@@ -52,7 +52,17 @@ export default function ClassDetailTutor() {
         const res = await api.get(`/requests/check/${classId}`);
         if (res.data.applied) setHasApplied(true);
       } catch (err) {
-        console.error("❌ Lỗi kiểm tra ứng tuyển:", err);
+        const msg =
+          err?.response?.data?.message ||
+          "Không thể kiểm tra trạng thái ứng tuyển.";
+
+        if (msg.includes("hồ sơ") || msg.includes("CV")) {
+          alert("⚠️ Bạn cần hoàn thiện hồ sơ (CV) trước khi ứng tuyển lớp!");
+          // 👉 Tự động chuyển đến trang cập nhật CV
+          router.push("/tutor/update-cv");
+        } else {
+          console.warn("⚠️ Lỗi kiểm tra ứng tuyển:", msg);
+        }
       }
     };
 
@@ -91,8 +101,8 @@ export default function ClassDetailTutor() {
   const safeLng = lng || 106.7009;
 
   /* =========================================================
-     📨 GỬI YÊU CẦU ỨNG TUYỂN DẠY
-  ========================================================= */
+   📨 GỬI YÊU CẦU ỨNG TUYỂN DẠY (phiên bản tiếng Việt)
+========================================================= */
   const handleApply = async () => {
     if (hasApplied || isSubmitting) return;
 
@@ -104,16 +114,18 @@ export default function ClassDetailTutor() {
     };
 
     try {
-      const res = await api.post("/requests/apply", payload).catch((err) => {
+      const res = await api.post("/requests", payload).catch((err) => {
         throw err.response || err;
       });
 
+      // ✅ Nếu gửi thành công
       if (res?.data?.success) {
         alert("✅ Đã gửi yêu cầu dạy lớp thành công!");
-        setHasApplied(true); // ✅ Đánh dấu đã gửi
+        setHasApplied(true);
         return;
       }
 
+      // ⚠️ Nếu backend trả về cảnh báo
       const msg = res?.data?.message || "⚠️ Gửi yêu cầu thất bại!";
       console.warn("⚠️ Thông báo backend:", msg);
 
@@ -128,7 +140,7 @@ export default function ClassDetailTutor() {
         msg.includes("CV") ||
         msg.includes("duyệt hồ sơ")
       ) {
-        alert("⚠️ Bạn cần hoàn thiện hồ sơ trước khi ứng tuyển lớp!");
+        alert("⚠️ Bạn cần hoàn thiện hồ sơ (CV) trước khi ứng tuyển lớp!");
         await router.push("/tutor/update-cv");
         return;
       }
@@ -136,7 +148,25 @@ export default function ClassDetailTutor() {
       alert(`⚠️ ${msg}`);
     } catch (error) {
       console.error("❌ Lỗi gửi yêu cầu:", error);
-      alert("❌ Không thể gửi yêu cầu dạy.");
+
+      const msg =
+        error?.data?.message ||
+        error?.response?.data?.message ||
+        "Không thể gửi yêu cầu dạy.";
+
+      // ✅ Thông báo cụ thể nếu lỗi liên quan hồ sơ / API
+      if (msg.toLowerCase().includes("not found")) {
+        alert("❌ API không tồn tại hoặc đường dẫn backend chưa đúng!");
+      } else if (msg.includes("hồ sơ") || msg.includes("CV")) {
+        alert("⚠️ Bạn cần hoàn thiện hồ sơ (CV) trước khi ứng tuyển lớp!");
+        router.push("/tutor/update-cv");
+      } else if (msg.includes("duyệt")) {
+        alert(
+          "⚠️ Hồ sơ của bạn chưa được duyệt, vui lòng chờ admin xét duyệt!"
+        );
+      } else {
+        alert(`❌ ${msg}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -153,23 +183,24 @@ export default function ClassDetailTutor() {
         <div className="mt-20" />
 
         {/* ================= HEADER ================= */}
-        <div className="bg-white py-6 relative shadow-sm rounded-b-xl border-b border-gray-200">
-          <div className="max-w-5xl mx-auto flex items-center justify-between px-6 relative">
+        <div className="bg-white py-8 shadow-sm rounded-b-xl border-b border-gray-200">
+          <div className="max-w-5xl mx-auto flex flex-col items-center gap-4 md:flex-row md:justify-between md:items-center px-6">
+            {/* Nút quay lại - nằm bên trái nhưng không đè sidebar */}
             <button
               onClick={() => router.back()}
-              className="absolute left-0 lg:left-10 bg-white hover:bg-gray-100 text-gray-700 shadow-sm rounded-full w-10 h-10 flex items-center justify-center border border-gray-300"
+              className="flex items-center gap-2 text-gray-600 bg-gray-100 hover:bg-gray-200 border border-gray-300 px-4 py-2 rounded-lg shadow-sm transition"
             >
-              ⬅
+              <span>⬅</span> Quay lại
             </button>
 
-            {/* Thông tin học viên */}
-            <div className="flex flex-col items-center mx-auto">
+            {/* Thông tin học viên - nằm giữa */}
+            <div className="flex flex-col items-center text-center">
               <img
                 src={
                   avatar && avatar !== "null" ? avatar : "/default-avatar.png"
                 }
                 alt="Avatar học viên"
-                className="w-20 h-20 rounded-full object-cover border-4 border-white shadow"
+                className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md"
               />
               <h2 className="font-semibold mt-3 text-gray-800 text-lg">
                 {full_name}
@@ -182,33 +213,30 @@ export default function ClassDetailTutor() {
               <div className="flex items-center mt-1 text-yellow-500 text-sm">
                 {"★★★★★"} <span className="ml-1 text-gray-400">(0)</span>
               </div>
-              <p className="text-xs text-gray-500 mt-1">Truy cập gần đây</p>
             </div>
 
-            {/* Nút chuyển lớp kế tiếp */}
+            {/* Nút kế tiếp - nằm bên phải */}
             <button
               disabled={!hasNext}
               onClick={async () => {
                 try {
                   const res = await api.get(`/classes/next/${classId}`);
                   const nextClass = res.data?.data;
-                  if (nextClass?.class_id) {
+                  if (nextClass?.class_id)
                     router.push(`/tutor/class-detail?id=${nextClass.class_id}`);
-                  } else {
-                    setHasNext(false);
-                  }
+                  else setHasNext(false);
                 } catch (err) {
                   if (err.response?.status === 404) setHasNext(false);
                   else console.error("❌ Lỗi lấy lớp kế tiếp:", err);
                 }
               }}
-              className={`${
+              className={`flex items-center gap-2 border px-4 py-2 rounded-lg shadow-sm transition ${
                 hasNext
-                  ? "bg-white hover:bg-gray-100 text-gray-700"
-                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
-              } shadow-sm rounded-full w-10 h-10 flex items-center justify-center border border-gray-300`}
+                  ? "bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300"
+                  : "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
+              }`}
             >
-              ➡
+              Kế tiếp <span>➡</span>
             </button>
           </div>
         </div>

@@ -2,26 +2,47 @@
 import { useState, useEffect, useRef } from "react";
 import api from "../utils/api";
 
-export default function Chatbot({ role = "guest", userName = "" }) {
+export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState("guest");
+  const [userName, setUserName] = useState("");
   const chatEndRef = useRef(null);
 
-  // ✅ Tự động cuộn xuống cuối khi có tin nhắn
+  /* =========================================================
+     🚀 Lấy role + user từ localStorage (nếu có)
+  ========================================================= */
+  useEffect(() => {
+    const savedRole = localStorage.getItem("role");
+    const savedName = localStorage.getItem("full_name");
+    setRole(savedRole || "guest");
+    setUserName(savedName || "");
+  }, []);
+
+  /* =========================================================
+     📜 Cuộn xuống cuối mỗi khi có tin nhắn mới
+  ========================================================= */
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ✅ Gửi tin nhắn
+  /* =========================================================
+     ✉️ Gửi tin nhắn
+  ========================================================= */
   const sendMessage = async () => {
     if (!question.trim()) return;
+
     setMessages((prev) => [...prev, { from: "user", text: question }]);
     setLoading(true);
 
     try {
-      const res = await api.post("/chatbot", { question, role });
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const res = await api.post("/chatbot", { question, role }, { headers });
+
       const reply =
         res.data.answer || "Xin lỗi, tôi chưa có câu trả lời cho câu hỏi này.";
       setMessages((prev) => [...prev, { from: "bot", text: reply }]);
@@ -37,7 +58,9 @@ export default function Chatbot({ role = "guest", userName = "" }) {
     }
   };
 
-  // ✅ Nhấn Enter để gửi
+  /* =========================================================
+     ⌨️ Gửi khi nhấn Enter
+  ========================================================= */
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -45,9 +68,14 @@ export default function Chatbot({ role = "guest", userName = "" }) {
     }
   };
 
-  // 🚫 Đặt ở đây — sau hook, tránh vi phạm quy tắc
+  /* =========================================================
+     🚫 Ẩn hoàn toàn nếu là admin
+  ========================================================= */
   if (role === "admin") return null;
 
+  /* =========================================================
+     💬 Giao diện Chatbot
+  ========================================================= */
   return (
     <>
       {/* 🔘 Nút bật/tắt chatbot */}

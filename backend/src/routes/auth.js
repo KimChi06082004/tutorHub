@@ -1,6 +1,7 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import emailjs from "@emailjs/nodejs";
 import { pool } from "../config/db.js";
 
 const router = express.Router();
@@ -105,6 +106,141 @@ router.post("/login", async (req, res) => {
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+/* =========================================================
+   POST /api/auth/send-otp  →  gửi mã OTP qua emailjs
+========================================================= */
+router.post("/send-otp", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: "Thiếu email" });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 phút
+
+    // 🧠 Lưu OTP vào bảng password_reset_otps
+    try {
+      await pool.query(
+        "INSERT INTO password_reset_otps (email, otp_code, expires_at) VALUES (?, ?, ?)",
+        [email, otp, expiresAt]
+      );
+      console.log("✅ OTP saved to database:", otp);
+    } catch (dbErr) {
+      console.error("❌ Database error:", dbErr.message);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Lỗi database. Có thể bảng password_reset_otps chưa được tạo. Hãy chạy: mysql -u root websitedaythem < backend/create-otp-table.sql" 
+      });
+    }
+
+    // ✉️ Gửi qua EmailJS
+    console.log("Sending OTP via EmailJS to:", email);
+    console.log("Service ID:", process.env.EMAILJS_SERVICE_ID);
+    console.log("Template ID:", process.env.EMAILJS_TEMPLATE_ID);
+    console.log("Public Key:", process.env.EMAILJS_PUBLIC_KEY ? "Set" : "Missing");
+    
+    try {
+      await emailjs.send(
+        process.env.EMAILJS_SERVICE_ID,
+        process.env.EMAILJS_TEMPLATE_ID,
+        {
+          to_name: email.split("@")[0],
+          to_email: email,
+          otp: otp,
+        },
+        {
+          publicKey: process.env.EMAILJS_PUBLIC_KEY,
+        }
+      );
+      console.log("✅ Email sent successfully!");
+    } catch (emailErr) {
+      console.error("⚠️ EmailJS error:", emailErr.message);
+      console.log("⚠️ Email failed but OTP is saved. Use this OTP for testing:", otp);
+      // Vẫn trả về thành công vì OTP đã được lưu
+      return res.json({ 
+        success: true, 
+        message: "✅ OTP đã được tạo (Email failed nhưng bạn có thể dùng OTP này để test): " + otp,
+        otp: otp // Chỉ để test, xóa sau khi production
+      });
+    }
+
+    res.json({ success: true, message: "✅ OTP đã gửi về email của bạn!" });
+  } catch (err) {
+    console.error("❌ Send OTP error:", err);
+    console.error("Error details:", err.message);
+    console.error("Error stack:", err.stack);
+    res.status(500).json({ success: false, message: "Không thể gửi OTP: " + err.message });
+  }
+});
+
+/* =========================================================
+   POST /api/auth/verify-otp  →  xác minh OTP hợp lệ
+========================================================= */
+router.post("/verify-otp", async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp)
+      return res.status(400).json({ message: "Thiếu email hoặc mã OTP" });
+
+    const [rows] = await pool.query(
+      "SELECT * FROM password_reset_otps WHERE email = ? ORDER BY id DESC LIMIT 1",
+      [email]
+    );
+    if (!rows.length)
+      return res.status(400).json({ message: "Không tìm thấy OTP" });
+
+    const record = rows[0];
+    if (record.otp_code !== otp)
+      return res.status(400).json({ message: "Sai mã OTP" });
+    if (new Date(record.expires_at) < new Date())
+      return res.status(400).json({ message: "Mã OTP đã hết hạn" });
+
+    res.json({ success: true, message: "✅ OTP hợp lệ" });
+  } catch (err) {
+    console.error("Verify OTP error:", err);
+    res.status(500).json({ message: "Lỗi xác minh OTP" });
+  }
+});
+
+/* =========================================================
+   POST /api/auth/reset-password  →  đổi mật khẩu mới
+========================================================= */
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { email, otp, new_password } = req.body;
+    if (!email || !otp || !new_password)
+      return res.status(400).json({ message: "Thiếu thông tin bắt buộc" });
+
+    const [rows] = await pool.query(
+      "SELECT * FROM password_reset_otps WHERE email = ? ORDER BY id DESC LIMIT 1",
+      [email]
+    );
+    if (!rows.length)
+      return res.status(400).json({ message: "Không tìm thấy OTP" });
+
+    const record = rows[0];
+    if (record.otp_code !== otp)
+      return res.status(400).json({ message: "Sai mã OTP" });
+    if (new Date(record.expires_at) < new Date())
+      return res.status(400).json({ message: "OTP đã hết hạn" });
+
+    const hashed = await bcrypt.hash(new_password, 10);
+    await pool.query("UPDATE users SET password = ? WHERE email = ?", [
+      hashed,
+      email,
+    ]);
+
+    // Xóa OTP sau khi dùng
+    await pool.query("DELETE FROM password_reset_otps WHERE email = ?", [
+      email,
+    ]);
+
+    res.json({ success: true, message: "✅ Đặt lại mật khẩu thành công!" });
+  } catch (err) {
+    console.error("Reset password error:", err);
+    res.status(500).json({ message: "Không thể đặt lại mật khẩu" });
   }
 });
 

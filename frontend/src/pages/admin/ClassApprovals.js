@@ -397,11 +397,29 @@ export default function ClassApprovals({ classes = [], onRefresh }) {
         label: "Từ chối",
         color: "bg-gray-200 text-gray-700 border-gray-300",
       },
+      PENDING_PAYMENT: {
+        label: "Chờ thanh toán",
+        color: "bg-amber-100 text-amber-700 border-amber-300",
+      },
+      PAYMENT_CANCELLED: {
+        label: "Thanh toán bị hủy",
+        color: "bg-gray-200 text-gray-600 border-gray-300",
+      },
+      PAID: {
+        label: "Đã thanh toán",
+        color: "bg-green-100 text-green-700 border-green-300",
+      },
+      EXPIRED: {
+        label: "Hết hạn",
+        color: "bg-gray-100 text-gray-600 border-gray-300",
+      },
     };
+
     const s = map[status] || {
       label: status,
-      color: "bg-gray-100 text-gray-600",
+      color: "bg-gray-100 text-gray-600 border-gray-300",
     };
+
     return (
       <span
         className={`px-3 py-1 text-sm font-medium rounded-full border ${s.color}`}

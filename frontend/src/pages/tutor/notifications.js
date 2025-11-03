@@ -11,13 +11,16 @@ export default function TutorNotifications() {
   const [filter, setFilter] = useState("all"); // all | read | unread
   const router = useRouter();
 
+  /* =========================================================
+     🧩 Lấy danh sách thông báo khi load trang
+  ========================================================= */
   useEffect(() => {
     fetchNotifications();
   }, []);
 
   const fetchNotifications = async () => {
     try {
-      const res = await api.get("/notifications");
+      const res = await api.get("/notifications"); // ✅ backend tự lọc user
       if (res.data.success) setNotifications(res.data.data);
     } catch (err) {
       console.error("❌ Lỗi tải thông báo:", err);
@@ -26,30 +29,53 @@ export default function TutorNotifications() {
     }
   };
 
-  const handleClick = (noti) => {
-    // Chuyển hướng dựa trên loại thông báo
-    if (noti.link) {
-      router.push(noti.link);
-    } else {
-      switch (noti.type) {
-        case "NEW_CLASS_ASSIGNED":
-          router.push("/tutor/classes/active");
-          break;
-        case "PAYMENT_SUCCESS":
-          router.push("/tutor/payments/received");
-          break;
-        case "CLASS_CANCELLED":
-          router.push("/tutor/classes/cancelled");
-          break;
-        default:
-          alert("Thông báo này không có trang chi tiết.");
-      }
-    }
+  /* =========================================================
+     📨 Khi click vào thông báo
+  ========================================================= */
+  const handleClick = async (noti) => {
+    try {
+      // 🔄 Cập nhật local trước để phản hồi nhanh
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.notification_id === noti.notification_id ? { ...n, is_read: 1 } : n
+        )
+      );
 
-    // Đánh dấu đã đọc
-    api.put(`/notifications/${noti.notification_id}/read`).catch(() => {});
+      // ✅ Gửi yêu cầu đánh dấu đã đọc
+      await api.put(`/notifications/${noti.notification_id}/read`);
+
+      // 🔗 Điều hướng theo loại thông báo
+      if (noti.link) {
+        router.push(noti.link);
+      } else {
+        switch (noti.type) {
+          case "NEW_CLASS_ASSIGNED":
+            router.push("/tutor/classes/active");
+            break;
+          case "PAYMENT_SUCCESS":
+            router.push("/tutor/payments/received");
+            break;
+          case "CLASS_CANCELLED":
+            router.push("/tutor/classes/cancelled");
+            break;
+          case "TUTOR_APPROVED":
+            router.push("/tutor/dashboard");
+            break;
+          case "TUTOR_REJECT":
+            router.push("/tutor/update-cv");
+            break;
+          default:
+            alert("Thông báo này không có trang chi tiết.");
+        }
+      }
+    } catch (err) {
+      console.error("❌ Lỗi đánh dấu đã đọc:", err);
+    }
   };
 
+  /* =========================================================
+     🎯 Bộ lọc thông báo theo trạng thái
+  ========================================================= */
   const filteredList =
     filter === "all"
       ? notifications
@@ -75,36 +101,23 @@ export default function TutorNotifications() {
 
             {/* Bộ lọc */}
             <div className="flex gap-3 mb-5">
-              <button
-                onClick={() => setFilter("all")}
-                className={`px-4 py-2 rounded-md ${
-                  filter === "all"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 hover:bg-gray-300"
-                }`}
-              >
-                Tất cả
-              </button>
-              <button
-                onClick={() => setFilter("unread")}
-                className={`px-4 py-2 rounded-md ${
-                  filter === "unread"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 hover:bg-gray-300"
-                }`}
-              >
-                Chưa đọc
-              </button>
-              <button
-                onClick={() => setFilter("read")}
-                className={`px-4 py-2 rounded-md ${
-                  filter === "read"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 hover:bg-gray-300"
-                }`}
-              >
-                Đã đọc
-              </button>
+              {[
+                { key: "all", label: "Tất cả" },
+                // { key: "unread", label: "Chưa đọc" },
+                { key: "read", label: "Đã đọc" },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setFilter(key)}
+                  className={`px-4 py-2 rounded-md ${
+                    filter === key
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 hover:bg-gray-300"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
             {/* Danh sách thông báo */}
