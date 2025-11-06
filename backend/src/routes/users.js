@@ -5,30 +5,42 @@ import { verifyToken, requireRoles } from "../middlewares/auth.js";
 
 const router = express.Router();
 
-/**
- * 🧩 GET /api/users
- * Admin: lấy danh sách tất cả users (có phân trang)
- * Query: ?page=1&limit=10
- */
+/* =========================================================
+   🧭 GET /api/users?search=...&page=1&limit=10
+   Admin xem danh sách user, có tìm kiếm + phân trang
+========================================================= */
 router.get("/", verifyToken, requireRoles(["admin"]), async (req, res) => {
   try {
-    // Lấy tham số phân trang
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 5;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search?.trim() || "";
     const offset = (page - 1) * limit;
 
-    // Lấy dữ liệu
+    const where = search ? `WHERE full_name LIKE ? OR email LIKE ?` : "";
+
+    const params = search
+      ? [`%${search}%`, `%${search}%`, limit, offset]
+      : [limit, offset];
+
     const [rows] = await pool.query(
-      `SELECT user_id, full_name, email, role, referral_code, created_at
-       FROM users
-       ORDER BY user_id ASC
-       LIMIT ? OFFSET ?`,
-      [limit, offset]
+      `
+      SELECT 
+        user_id, full_name, email, role, status, referral_code, created_at
+      FROM users
+      ${where}
+      ORDER BY user_id ASC
+      LIMIT ? OFFSET ?
+      `,
+      params
     );
 
-    // Tính tổng
     const [[{ total }]] = await pool.query(
-      "SELECT COUNT(*) AS total FROM users"
+      `
+      SELECT COUNT(*) AS total 
+      FROM users
+      ${search ? "WHERE full_name LIKE ? OR email LIKE ?" : ""}
+      `,
+      search ? [`%${search}%`, `%${search}%`] : []
     );
 
     res.json({
@@ -41,15 +53,15 @@ router.get("/", verifyToken, requireRoles(["admin"]), async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Users list error:", err);
+    console.error("❌ Users list error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-/**
- * 🧩 GET /api/users/:id
- * Admin hoặc chính chủ user_id
- */
+/* =========================================================
+   🧩 GET /api/users/:id
+   Admin hoặc chính chủ xem chi tiết tài khoản
+========================================================= */
 router.get("/:id", verifyToken, async (req, res) => {
   try {
     if (req.user.role !== "admin" && req.user.user_id != req.params.id) {
@@ -57,9 +69,10 @@ router.get("/:id", verifyToken, async (req, res) => {
     }
 
     const [rows] = await pool.query(
-      "SELECT user_id, full_name, email, role, referral_code, created_at FROM users WHERE user_id=?",
+      "SELECT user_id, full_name, email, role, status, referral_code, created_at FROM users WHERE user_id=?",
       [req.params.id]
     );
+
     if (!rows.length)
       return res
         .status(404)
@@ -67,15 +80,15 @@ router.get("/:id", verifyToken, async (req, res) => {
 
     res.json({ success: true, data: rows[0] });
   } catch (err) {
-    console.error("User detail error:", err);
+    console.error("❌ User detail error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-/**
- * 🧩 PUT /api/users/:id
- * Admin hoặc chính chủ update profile
- */
+/* =========================================================
+   🧩 PUT /api/users/:id
+   Admin hoặc chính chủ update thông tin cá nhân
+========================================================= */
 router.put("/:id", verifyToken, async (req, res) => {
   try {
     if (req.user.role !== "admin" && req.user.user_id != req.params.id) {
@@ -109,17 +122,17 @@ router.put("/:id", verifyToken, async (req, res) => {
       params
     );
 
-    res.json({ success: true, message: "User updated successfully" });
+    res.json({ success: true, message: "✅ User updated successfully" });
   } catch (err) {
-    console.error("User update error:", err);
+    console.error("❌ User update error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-/**
- * 🧩 PATCH /api/users/:id/role
- * Admin thay đổi role (student/tutor/admin)
- */
+/* =========================================================
+   🧑‍💼 PATCH /api/users/:id/role
+   Admin đổi vai trò user
+========================================================= */
 router.patch(
   "/:id/role",
   verifyToken,
@@ -127,7 +140,9 @@ router.patch(
   async (req, res) => {
     try {
       const { role } = req.body;
-      if (!["student", "tutor", "admin"].includes(role)) {
+      const validRoles = ["admin", "student", "tutor", "accountant", "cskh"];
+
+      if (!validRoles.includes(role)) {
         return res
           .status(400)
           .json({ success: false, message: "Invalid role" });
@@ -138,9 +153,64 @@ router.patch(
         req.params.id,
       ]);
 
-      res.json({ success: true, message: "Role updated successfully" });
+      res.json({ success: true, message: "✅ Role updated successfully" });
     } catch (err) {
-      console.error("Role update error:", err);
+      console.error("❌ Role update error:", err);
+      res.status(500).json({ success: false, message: "Server error" });
+    }
+  }
+);
+
+/* =========================================================
+   🔒 PATCH /api/users/:id/status
+   Admin khóa / mở khóa tài khoản
+========================================================= */
+router.patch(
+  "/:id/status",
+  verifyToken,
+  requireRoles(["admin"]),
+  async (req, res) => {
+    try {
+      const { status } = req.body; // ACTIVE / BANNED
+      if (!["ACTIVE", "BANNED"].includes(status)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid status value" });
+      }
+
+      await pool.query("UPDATE users SET status=? WHERE user_id=?", [
+        status,
+        req.params.id,
+      ]);
+
+      res.json({
+        success: true,
+        message:
+          status === "ACTIVE"
+            ? "🔓 User unlocked successfully"
+            : "🔒 User has been banned",
+      });
+    } catch (err) {
+      console.error("❌ Status update error:", err);
+      res.status(500).json({ success: false, message: "Server error" });
+    }
+  }
+);
+
+/* =========================================================
+   🗑️ DELETE /api/users/:id
+   Admin xóa tài khoản
+========================================================= */
+router.delete(
+  "/:id",
+  verifyToken,
+  requireRoles(["admin"]),
+  async (req, res) => {
+    try {
+      await pool.query("DELETE FROM users WHERE user_id=?", [req.params.id]);
+      res.json({ success: true, message: "🗑️ User deleted successfully" });
+    } catch (err) {
+      console.error("❌ Delete user error:", err);
       res.status(500).json({ success: false, message: "Server error" });
     }
   }

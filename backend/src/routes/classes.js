@@ -421,48 +421,45 @@ router.delete("/:id", verifyToken, requireRoles("admin"), async (req, res) => {
 });
 
 /* =========================================================
-   🧮 ADMIN – Danh sách tất cả lớp có phân trang
-   GET /api/classes/admin?page=1&limit=10&status=APPROVED_VISIBLE
+   🧮 ADMIN – Danh sách lớp có tìm kiếm & phân trang
+   GET /api/classes/admin?page=1&limit=10&search=Toán
 ========================================================= */
-router.get(
-  "/admin",
-  verifyToken,
-  requireRoles(["admin", "cskh"]),
-  async (req, res) => {
-    try {
-      let { page = 1, limit = 5, status, search } = req.query;
-      page = parseInt(page);
-      limit = parseInt(limit);
-      const offset = (page - 1) * limit;
+router.get("/admin", verifyToken, requireRoles(["admin"]), async (req, res) => {
+  try {
+    let { page = 1, limit = 5, status, search } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+    const offset = (page - 1) * limit;
 
-      // ✅ Base query
-      let whereClause = "WHERE 1=1";
-      const params = [];
+    // ✅ Base WHERE
+    let whereClause = "WHERE 1=1";
+    const params = [];
 
-      // Lọc theo trạng thái
-      if (status) {
-        whereClause += " AND c.status = ?";
-        params.push(status);
-      }
+    // Lọc trạng thái nếu có
+    if (status) {
+      whereClause += " AND c.status = ?";
+      params.push(status);
+    }
 
-      // Lọc theo từ khóa (tìm theo tên môn học hoặc tên học viên)
-      if (search) {
-        whereClause += " AND (c.subject LIKE ? OR u.full_name LIKE ?)";
-        params.push(`%${search}%`, `%${search}%`);
-      }
+    // 🔍 Tìm kiếm theo mã lớp, môn học hoặc tên học viên
+    if (search && search.trim() !== "") {
+      whereClause +=
+        " AND (c.class_id LIKE ? OR c.subject LIKE ? OR u.full_name LIKE ?)";
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
 
-      // ✅ Lấy tổng số bản ghi
-      const [[{ total }]] = await pool.query(
-        `SELECT COUNT(*) AS total
+    // ✅ Tổng bản ghi
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) AS total
          FROM classes c
          JOIN users u ON c.student_id = u.user_id
          ${whereClause}`,
-        params
-      );
+      params
+    );
 
-      // ✅ Lấy dữ liệu trang hiện tại
-      const [rows] = await pool.query(
-        `
+    // ✅ Dữ liệu từng trang
+    const [rows] = await pool.query(
+      `
         SELECT 
           c.class_id, c.subject, c.grade, c.schedule, 
           c.tuition_amount, c.status, c.visibility,
@@ -474,30 +471,27 @@ router.get(
         ORDER BY c.created_at DESC
         LIMIT ? OFFSET ?
       `,
-        [...params, limit, offset]
-      );
+      [...params, limit, offset]
+    );
 
-      const totalPages = Math.ceil(total / limit);
-
-      res.json({
-        success: true,
-        data: rows,
-        pagination: {
-          currentPage: page,
-          totalPages,
-          totalItems: total,
-          limit,
-        },
-      });
-    } catch (err) {
-      console.error("❌ Admin classes pagination error:", err);
-      res.status(500).json({
-        success: false,
-        message: "Lỗi server khi lấy danh sách lớp (admin).",
-      });
-    }
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        limit,
+      },
+    });
+  } catch (err) {
+    console.error("❌ Admin class search error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi tìm kiếm lớp học.",
+    });
   }
-);
+});
 
 // 🧩 Học viên hủy lớp đã đăng (ĐẶT TRƯỚC route /:id để tránh xung đột)
 router.put("/:id/cancel", verifyToken, async (req, res) => {
@@ -566,6 +560,75 @@ router.put("/:id/cancel", verifyToken, async (req, res) => {
       .json({ success: false, message: err.sqlMessage || err.message });
   }
 });
+
+/* =========================================================
+   💰 API: Thống kê doanh thu theo tháng (Hiển thị đủ 12 tháng)
+========================================================= */
+router.get("/revenue", verifyToken, requireRoles("admin"), async (req, res) => {
+  try {
+    const { year, month } = req.query;
+    const params = [];
+    let where = "WHERE status = 'SUCCESS'";
+
+    // ✅ Nếu có năm → lọc theo năm
+    if (year) {
+      where += " AND YEAR(created_at) = ?";
+      params.push(year);
+    }
+
+    // ✅ Nếu có tháng → lọc theo tháng cụ thể
+    if (month) {
+      where += " AND MONTH(created_at) = ?";
+      params.push(month);
+    }
+
+    let sql;
+
+    if (month) {
+      // 🔹 Nếu có tháng → chỉ trả về dữ liệu tháng đó
+      sql = `
+        SELECT 
+          DATE_FORMAT(created_at, '%Y-%m') AS month,
+          SUM(amount) AS total_revenue,
+          COUNT(*) AS total_transactions
+        FROM payments
+        ${where}
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+        ORDER BY month ASC
+      `;
+    } else {
+      // 🔹 Nếu không có tháng → trả về đủ 12 tháng trong năm (kể cả tháng không có doanh thu)
+      sql = `
+        SELECT 
+          months.month AS month,
+          COALESCE(SUM(p.amount), 0) AS total_revenue,
+          COALESCE(COUNT(p.payment_id), 0) AS total_transactions
+        FROM (
+          SELECT DATE_FORMAT(CONCAT(?, '-', m, '-01'), '%Y-%m') AS month
+          FROM (
+            SELECT 1 AS m UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6
+            UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10 UNION SELECT 11 UNION SELECT 12
+          ) AS months_table
+        ) AS months
+        LEFT JOIN payments p ON DATE_FORMAT(p.created_at, '%Y-%m') = months.month AND p.status = 'SUCCESS'
+        GROUP BY months.month
+        ORDER BY months.month ASC
+      `;
+      params.unshift(year || new Date().getFullYear());
+    }
+
+    const [rows] = await pool.query(sql, params);
+
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error("❌ Lỗi khi truy vấn doanh thu:", err);
+    res.status(500).json({
+      success: false,
+      message: "Không thể lấy dữ liệu doanh thu.",
+    });
+  }
+});
+
 
 /* =========================================================
    GET /api/classes/:id (chi tiết lớp cho tutor / student)
