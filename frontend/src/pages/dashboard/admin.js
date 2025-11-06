@@ -424,8 +424,13 @@ export default function AdminDashboard() {
                       <XAxis dataKey="month" />
                       <YAxis />
                       <Tooltip
-                        formatter={(value) => `${value.toLocaleString()} đ`}
+                        formatter={(value) =>
+                          `${Number(value).toLocaleString("vi-VN", {
+                            maximumFractionDigits: 0,
+                          })} đ`
+                        }
                       />
+
                       <Bar
                         dataKey="total_revenue"
                         fill="#16a34a"
@@ -438,9 +443,14 @@ export default function AdminDashboard() {
                 <div className="mt-6 flex justify-between items-center">
                   <p className="text-gray-700 font-medium">
                     🧾 Tổng cộng:{" "}
-                    {revenueData
-                      .reduce((sum, r) => sum + Number(r.total_revenue || 0), 0)
-                      .toLocaleString()}{" "}
+                    {Number(
+                      revenueData.reduce(
+                        (sum, r) => sum + Number(r.total_revenue || 0),
+                        0
+                      )
+                    ).toLocaleString("vi-VN", {
+                      maximumFractionDigits: 0,
+                    })}{" "}
                     VND
                   </p>
 

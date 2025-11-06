@@ -12,11 +12,17 @@ router.post("/stripe", async (req, res) => {
   try {
     const { class_id, amount, subject } = req.body;
 
-    // Stripe chỉ hỗ trợ tiền tệ như USD, SGD, EUR... (không có VND)
-    const stripeAmount = Math.round((amount / 24000) * 100); // 24,000 VNĐ = 1 USD
+    // ✅ amount bạn đang gửi từ frontend là VNĐ
+    // Stripe chỉ hỗ trợ USD, nên ta đổi sang USD để thanh toán, nhưng vẫn lưu VNĐ ở DB
+    const amountInUSD = amount / 24000; // chuyển sang USD để thanh toán
+    const stripeAmount = Math.round(amountInUSD * 100); // USD → cents
 
     const frontendURL = process.env.FRONTEND_URL || "http://localhost:3000";
-    console.log("🔍 FRONTEND_URL:", frontendURL);
+    console.log("🔍 Thanh toán:", {
+      VNĐ: amount,
+      USD: amountInUSD,
+      stripeAmount,
+    });
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -25,7 +31,7 @@ router.post("/stripe", async (req, res) => {
           price_data: {
             currency: "usd",
             product_data: { name: `Đặt cọc lớp ${class_id} - ${subject}` },
-            unit_amount: stripeAmount,
+            unit_amount: stripeAmount, // ✅ Stripe dùng cents của USD
           },
           quantity: 1,
         },
