@@ -212,11 +212,11 @@ Câu hỏi: ${question}
 
     res.json({ success: true, answer });
   } catch (err) {
-    console.error("❌ Chatbot error:", err);
+    console.error(" Chatbot error:", err);
     if (err.name === "AbortError") {
       return res.json({
         success: true,
-        answer: "⏱️ Hệ thống phản hồi chậm, vui lòng thử lại sau vài giây.",
+        answer: " Hệ thống phản hồi chậm, vui lòng thử lại sau vài giây.",
       });
     }
     res.status(500).json({

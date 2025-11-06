@@ -129,7 +129,7 @@ export default function ForgotPassword() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-200">
       <div className="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md transform transition duration-300 hover:scale-[1.02]">
         <h1 className="text-3xl font-bold mb-6 text-center text-[#003366] flex items-center justify-center gap-2">
-          🔑 Quên mật khẩu
+          Quên mật khẩu
         </h1>
 
         <form onSubmit={handleSubmit}>

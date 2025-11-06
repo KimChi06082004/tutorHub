@@ -35,7 +35,7 @@ export default function TutorDetail() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setTutor(data.data);
-        else alert("❌ Không tìm thấy hồ sơ!");
+        else alert(" Không tìm thấy hồ sơ!");
       })
       .catch((err) => console.error("Fetch tutor error:", err))
       .finally(() => setLoading(false));
@@ -43,7 +43,7 @@ export default function TutorDetail() {
 
   const handleAction = async (action) => {
     if (action === "reject" && !reason.trim()) {
-      alert("⚠️ Vui lòng nhập lý do từ chối!");
+      alert("Vui lòng nhập lý do từ chối!");
       return;
     }
 
@@ -65,17 +65,17 @@ export default function TutorDetail() {
         alert(data.message);
         router.push("/dashboard/admin");
       } else {
-        alert("❌ " + (data.message || "Thao tác thất bại!"));
+        alert(" " + (data.message || "Thao tác thất bại!"));
       }
     } catch (err) {
-      alert("🚨 Lỗi server!");
+      alert(" Lỗi server!");
     }
   };
 
   if (loading) return <p className="text-center mt-20">⏳ Đang tải hồ sơ...</p>;
   if (!tutor)
     return (
-      <p className="text-center mt-20 text-red-500">❌ Không tìm thấy hồ sơ!</p>
+      <p className="text-center mt-20 text-red-500"> Không tìm thấy hồ sơ!</p>
     );
 
   // ✅ Parse chứng chỉ JSON
@@ -101,7 +101,7 @@ export default function TutorDetail() {
         </button>
 
         <h2 className="text-2xl font-semibold mb-6 text-gray-800 text-center">
-          🧾 Hồ sơ chi tiết của {tutor.full_name}
+          Hồ sơ chi tiết của {tutor.full_name}
         </h2>
 
         {/* 1️⃣ Thông tin cơ bản */}
@@ -160,7 +160,7 @@ export default function TutorDetail() {
         {/* 2️⃣ Mô tả thêm */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold mb-2 text-gray-700">
-            📝 Giới thiệu & Kinh nghiệm
+            Giới thiệu & Kinh nghiệm
           </h3>
           <p className="border rounded-md p-3 bg-gray-50 text-sm">
             {tutor.bio || tutor.experience || "Chưa có mô tả."}
@@ -169,9 +169,7 @@ export default function TutorDetail() {
 
         {/* 3️⃣ Ảnh CCCD */}
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-3 text-gray-700">
-            🪪 Ảnh CCCD
-          </h3>
+          <h3 className="text-lg font-semibold mb-3 text-gray-700">Ảnh CCCD</h3>
           <div className="flex gap-6 flex-wrap">
             {[tutor.cccd_front, tutor.cccd_back].map(
               (img, i) =>
@@ -190,7 +188,7 @@ export default function TutorDetail() {
         {/* 4️⃣ Chứng chỉ */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold mb-3 text-gray-700">
-            🎓 Chứng chỉ / Bằng cấp
+            Chứng chỉ / Bằng cấp
           </h3>
           {certList.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -211,7 +209,7 @@ export default function TutorDetail() {
         {/* 5️⃣ Bản đồ */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold mb-3 text-gray-700">
-            🗺️ Vị trí dạy
+            Vị trí dạy
           </h3>
           <div className="w-full h-64 rounded-lg overflow-hidden border">
             <VietnamMap
@@ -238,14 +236,14 @@ export default function TutorDetail() {
               onClick={() => handleAction("approve")}
               className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg"
             >
-              ✅ Duyệt hồ sơ
+              Duyệt hồ sơ
             </button>
 
             <button
               onClick={() => handleAction("reject")}
               className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg"
             >
-              ❌ Từ chối hồ sơ
+              Từ chối hồ sơ
             </button>
           </div>
         </div>

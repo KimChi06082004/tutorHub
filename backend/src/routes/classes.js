@@ -86,19 +86,18 @@ router.post("/", verifyToken, requireRoles("student"), async (req, res) => {
       experience || "Không yêu cầu",
       description || "",
     ];
-
-    console.log("🧩 SQL query:", sql);
-    console.log("🧩 Values:", values);
+    console.log(" SQL query:", sql);
+    console.log(" Values:", values);
 
     const [result] = await pool.query(sql, values);
 
     res.status(201).json({
       success: true,
-      message: "✅ Lớp đã được tạo, chờ admin duyệt.",
+      message: " Lớp đã được tạo, chờ admin duyệt.",
       data: { class_id: result.insertId },
     });
   } catch (err) {
-    console.error("❌ Create class error:", err.sqlMessage || err.message);
+    console.error(" Create class error:", err.sqlMessage || err.message);
     res.status(500).json({
       success: false,
       message: err.sqlMessage || err.message,
@@ -140,10 +139,10 @@ router.put(
 
       res.json({
         success: true,
-        message: "✅ Lớp đã được duyệt và hiển thị công khai.",
+        message: "Lớp đã được duyệt và hiển thị công khai.",
       });
     } catch (err) {
-      console.error("❌ Approve class error:", err);
+      console.error(" Approve class error:", err);
       res.status(500).json({ success: false, message: "Server error" });
     }
   }
@@ -163,9 +162,9 @@ router.put(
         "UPDATE classes SET status=?, visibility=?, admin_reject_reason=?, admin_reject_at=NOW() WHERE class_id=?",
         ["REJECTED", "PRIVATE", reason, req.params.id]
       );
-      res.json({ success: true, message: "❌ Lớp đã bị từ chối." });
+      res.json({ success: true, message: " Lớp đã bị từ chối." });
     } catch (err) {
-      console.error("❌ Reject class error:", err);
+      console.error(" Reject class error:", err);
       res.status(500).json({ success: false, message: err.message });
     }
   }
@@ -268,7 +267,7 @@ router.get("/", verifyToken, async (req, res) => {
     const [rows] = await pool.query(sql, params);
     res.json({ success: true, data: rows });
   } catch (err) {
-    console.error("❌ Lỗi khi tìm kiếm lớp:", err);
+    console.error(" Lỗi khi tìm kiếm lớp:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
@@ -299,11 +298,11 @@ router.put(
 
       res.json({
         success: true,
-        message: "🎯 Gia sư đã được chọn, lớp chuyển sang trạng thái đang học.",
+        message: " Gia sư đã được chọn, lớp chuyển sang trạng thái đang học.",
         class_status: "IN_PROGRESS",
       });
     } catch (err) {
-      console.error("❌ Select tutor error:", err);
+      console.error(" Select tutor error:", err);
       res.status(500).json({ success: false, message: "Server error" });
     }
   }
@@ -338,11 +337,11 @@ router.put("/:id/complete", verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: "🏁 Lớp đã hoàn tất.",
+      message: "Lớp đã hoàn tất.",
       class_status: "DONE",
     });
   } catch (err) {
-    console.error("❌ Complete class error:", err);
+    console.error(" Complete class error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
@@ -364,7 +363,7 @@ router.get("/mine", verifyToken, requireRoles("student"), async (req, res) => {
 
     res.json({ success: true, data: rows });
   } catch (err) {
-    console.error("❌ Get my classes error:", err);
+    console.error(" Get my classes error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
@@ -382,9 +381,9 @@ router.put(
         "UPDATE classes SET status=?, visibility=? WHERE class_id=?",
         ["CANCELLED", "PRIVATE", req.params.id]
       );
-      res.json({ success: true, message: "✅ Lớp đã được duyệt hủy." });
+      res.json({ success: true, message: " Lớp đã được duyệt hủy." });
     } catch (err) {
-      console.error("❌ Approve cancel error:", err);
+      console.error(" Approve cancel error:", err);
       res.status(500).json({ success: false, message: "Server error" });
     }
   }
@@ -413,9 +412,9 @@ router.delete("/:id", verifyToken, requireRoles("admin"), async (req, res) => {
     }
 
     await pool.query("DELETE FROM classes WHERE class_id=?", [req.params.id]);
-    res.json({ success: true, message: "🗑️ Lớp đã bị xóa vĩnh viễn." });
+    res.json({ success: true, message: " Lớp đã bị xóa vĩnh viễn." });
   } catch (err) {
-    console.error("❌ Delete class error:", err);
+    console.error(" Delete class error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
@@ -485,7 +484,7 @@ router.get("/admin", verifyToken, requireRoles(["admin"]), async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("❌ Admin class search error:", err);
+    console.error(" Admin class search error:", err);
     res.status(500).json({
       success: false,
       message: "Lỗi server khi tìm kiếm lớp học.",
@@ -496,8 +495,8 @@ router.get("/admin", verifyToken, requireRoles(["admin"]), async (req, res) => {
 // 🧩 Học viên hủy lớp đã đăng (ĐẶT TRƯỚC route /:id để tránh xung đột)
 router.put("/:id/cancel", verifyToken, async (req, res) => {
   try {
-    console.log("✅ Cancel class request - Token decoded:", req.user);
-    console.log("✅ Class ID:", req.params.id);
+    console.log(" Cancel class request - Token decoded:", req.user);
+    console.log(" Class ID:", req.params.id);
 
     const class_id = req.params.id;
     const { reason } = req.body;
@@ -505,36 +504,36 @@ router.put("/:id/cancel", verifyToken, async (req, res) => {
 
     // ✅ Kiểm tra role
     if (role !== "student") {
-      console.log("❌ Role check failed. Current role:", role);
+      console.log(" Role check failed. Current role:", role);
       return res
         .status(403)
         .json({ success: false, message: "Chỉ học viên mới được hủy lớp." });
     }
 
     // 🧐 Kiểm tra lớp có thuộc học viên không
-    console.log("🔍 Checking class ownership:", { class_id, user_id });
+    console.log(" Checking class ownership:", { class_id, user_id });
     const [check] = await pool.query(
       "SELECT * FROM classes WHERE class_id=? AND student_id=?",
       [class_id, user_id]
     );
 
     if (!check.length) {
-      console.log("❌ Class not found or no permission");
+      console.log(" Class not found or no permission");
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy lớp hoặc bạn không có quyền hủy lớp này.",
       });
     }
 
-    console.log("✅ Class found:", check[0]);
+    console.log(" Class found:", check[0]);
 
     // 🔄 Cập nhật trạng thái lớp
-    console.log("🔄 Updating class status to CANCELLED...");
+    console.log("Updating class status to CANCELLED...");
     const [updateResult] = await pool.query(
       "UPDATE classes SET status='CANCELLED', visibility='PRIVATE' WHERE class_id=?",
       [class_id]
     );
-    console.log("✅ Update result:", updateResult);
+    console.log(" Update result:", updateResult);
 
     // 🛎️ Gửi thông báo cho học viên xác nhận (bỏ qua nếu lỗi)
     try {
@@ -543,18 +542,18 @@ router.put("/:id/cancel", verifyToken, async (req, res) => {
          VALUES (?, 'Lớp đã hủy', 'Lớp học của bạn đã được hủy thành công.', 'CLASS')`,
         [user_id]
       );
-      console.log("✅ Notification sent");
+      console.log(" Notification sent");
     } catch (notifErr) {
-      console.log("⚠️ Failed to send notification:", notifErr.message);
+      console.log(" Failed to send notification:", notifErr.message);
       // Không throw error, vì đã hủy lớp thành công
     }
 
     res.json({
       success: true,
-      message: "✅ Bạn đã hủy lớp thành công.",
+      message: " Bạn đã hủy lớp thành công.",
     });
   } catch (err) {
-    console.error("❌ Cancel class error:", err);
+    console.error(" Cancel class error:", err);
     res
       .status(500)
       .json({ success: false, message: err.sqlMessage || err.message });
@@ -656,7 +655,7 @@ router.get("/:id", verifyToken, async (req, res) => {
 
     return res.json({ success: true, data: rows[0] });
   } catch (err) {
-    console.error("❌ Get class detail error:", err);
+    console.error(" Get class detail error:", err);
     return res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -686,7 +685,7 @@ router.get("/next/:id", async (req, res) => {
       data: rows[0],
     });
   } catch (err) {
-    console.error("❌ Lỗi khi lấy lớp kế tiếp:", err);
+    console.error(" Lỗi khi lấy lớp kế tiếp:", err);
     res.status(500).json({
       success: false,
       message: "Lỗi server khi lấy lớp kế tiếp.",
@@ -729,7 +728,7 @@ router.get("/payment/pending", verifyToken, async (req, res) => {
     const [rows] = await pool.query(query, [user_id]);
     res.json({ success: true, data: rows });
   } catch (err) {
-    console.error("❌ Get pending payment error:", err);
+    console.error(" Get pending payment error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -763,10 +762,10 @@ router.put("/:id/expire-payment", verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: "⏰ Lớp đã hết hạn thanh toán và bị hủy.",
+      message: " Lớp đã hết hạn thanh toán và bị hủy.",
     });
   } catch (err) {
-    console.error("❌ Expire payment error:", err);
+    console.error(" Expire payment error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -839,7 +838,7 @@ router.put(
         [id, tutor[0].tutor_id]
       );
 
-      res.json({ success: true, message: "🚫 Hủy thanh toán thành công!" });
+      res.json({ success: true, message: " Hủy thanh toán thành công!" });
     } catch (err) {
       console.error("❌ Cancel payment error:", err);
       res.status(500).json({ success: false, message: err.message });
@@ -940,8 +939,8 @@ router.put(
         success: true,
         message:
           newStatus === "DONE"
-            ? "✅ Thanh toán thành công — Lớp đã hoàn tất."
-            : "✅ Thanh toán thành công — Lớp bắt đầu được học.",
+            ? " Thanh toán thành công — Lớp đã hoàn tất."
+            : " Thanh toán thành công — Lớp bắt đầu được học.",
       });
     } catch (err) {
       await conn.rollback();

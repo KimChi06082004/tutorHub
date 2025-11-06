@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { logout, getAuthUser } from "../utils/auth";
 import Link from "next/link";
 import api from "../utils/api";
+import toast from "react-hot-toast"; // ✅ thêm
 
 export default function TopbarStudent() {
   const router = useRouter();
@@ -51,6 +52,17 @@ export default function TopbarStudent() {
         console.error("❌ Lỗi tải thông báo:", err);
       }
     };
+
+    // 🧠 Hàm hiện thông báo “Đang phát triển”
+    const notifyDeveloping = () =>
+      toast("🚧 Tính năng đang được phát triển!", {
+        icon: "🛠️",
+        style: {
+          borderRadius: "10px",
+          background: "#003366",
+          color: "#fff",
+        },
+      });
 
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 15000);

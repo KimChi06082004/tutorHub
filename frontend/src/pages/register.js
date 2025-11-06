@@ -33,11 +33,11 @@ export default function Register() {
           router.push("/dashboard/accountant");
         else router.push("/dashboard/student");
       } else {
-        setMessage(res.data.message || "❌ Đăng ký thất bại!");
+        setMessage(res.data.message || " Đăng ký thất bại!");
       }
     } catch (err) {
       console.error("Register error:", err);
-      setMessage("❌ Lỗi kết nối máy chủ, vui lòng thử lại!");
+      setMessage(" Lỗi kết nối máy chủ, vui lòng thử lại!");
     } finally {
       setLoading(false);
     }
@@ -98,8 +98,8 @@ export default function Register() {
             onChange={(e) => setForm({ ...form, role: e.target.value })}
             className="border border-gray-300 rounded-lg p-3 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
           >
-            <option value="student">🎓 Học viên</option>
-            <option value="tutor">👨‍🏫 Gia sư</option>
+            <option value="student"> Học viên</option>
+            <option value="tutor"> Gia sư</option>
           </select>
 
           <button
@@ -111,7 +111,7 @@ export default function Register() {
                 : "bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600"
             }`}
           >
-            {loading ? "⏳ Đang đăng ký..." : "🚀 Đăng ký ngay"}
+            {loading ? "⏳ Đang đăng ký..." : " Đăng ký ngay"}
           </button>
         </form>
 

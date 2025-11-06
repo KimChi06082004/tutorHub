@@ -17,7 +17,7 @@ export default function TutorCompletedClasses() {
       const res = await api.get("/classes/tutor/completed");
       if (res.data.success) setClasses(res.data.data);
     } catch (err) {
-      console.error("❌ Lỗi tải lớp đã kết thúc:", err);
+      console.error(" Lỗi tải lớp đã kết thúc:", err);
     } finally {
       setLoading(false);
     }
@@ -34,7 +34,7 @@ export default function TutorCompletedClasses() {
         <main className="flex-1 p-6 mt-[70px]">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-2xl font-semibold mb-4 text-purple-700">
-              🏁 Lớp đã kết thúc
+              Lớp đã kết thúc
             </h2>
 
             {loading ? (
@@ -55,19 +55,17 @@ export default function TutorCompletedClasses() {
                     {cls.subject} - Lớp {cls.grade}
                   </h3>
                   <p className="text-sm text-gray-600">
-                    👩‍🎓 Học viên: {cls.student_name}
+                    Học viên: {cls.student_name}
                   </p>
+                  <p className="text-sm text-gray-600">{cls.student_email}</p>
                   <p className="text-sm text-gray-600">
-                    📧 {cls.student_email}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    🏠 Địa chỉ: {cls.address || "Chưa có thông tin"}
+                    Địa chỉ: {cls.address || "Chưa có thông tin"}
                   </p>
                   <p className="text-sm text-gray-500">
-                    💰 Học phí: {cls.tuition_amount?.toLocaleString()} VND/h
+                    Học phí: {cls.tuition_amount?.toLocaleString()} VND/h
                   </p>
                   <p className="text-sm text-gray-500">
-                    🕒 Ngày hoàn thành:{" "}
+                    Ngày hoàn thành:{" "}
                     <b>
                       {cls.completed_at
                         ? new Date(cls.completed_at).toLocaleDateString("vi-VN")
@@ -75,7 +73,7 @@ export default function TutorCompletedClasses() {
                     </b>
                   </p>
                   <p className="mt-2 text-green-600 font-medium">
-                    ✅ Trạng thái: Lớp đã hoàn tất
+                    Trạng thái: Lớp đã hoàn tất
                   </p>
                 </div>
               ))

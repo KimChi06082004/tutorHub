@@ -9,7 +9,7 @@ export default function TutorClasses() {
         <TopbarTutor />
         <div className="mt-20 p-6">
           <h2 className="text-2xl font-semibold text-blue-700 mb-4">
-            📚 Danh sách lớp đã ứng tuyển / được chọn dạy
+            Danh sách lớp đã ứng tuyển / được chọn dạy
           </h2>
           <p>Đang phát triển...</p>
         </div>

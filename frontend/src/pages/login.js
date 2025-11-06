@@ -32,7 +32,7 @@ export default function Login() {
         if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
 
         setAuthUser(user, access);
-        setMessage("✅ Đăng nhập thành công!");
+        setMessage(" Đăng nhập thành công!");
         setSuccess(true);
         setForm({ email: "", password: "" });
 
@@ -53,11 +53,11 @@ export default function Login() {
           }
         }, 1000);
       } else {
-        setMessage(res.data.message || "❌ Đăng nhập thất bại!");
+        setMessage(res.data.message || " Đăng nhập thất bại!");
       }
     } catch (err) {
-      console.error("❌ Login error:", err.response?.data || err.message);
-      setMessage(err.response?.data?.message || "❌ Sai email hoặc mật khẩu!");
+      console.error(" Login error:", err.response?.data || err.message);
+      setMessage(err.response?.data?.message || " Sai email hoặc mật khẩu!");
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export default function Login() {
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-200">
       <div className="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md transform transition duration-300 hover:scale-[1.02]">
         <h2 className="text-3xl font-bold text-center mb-6 text-[#003366] flex items-center justify-center gap-2">
-          🔐 Đăng nhập hệ thống
+          Đăng nhập hệ thống
         </h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
@@ -130,7 +130,7 @@ export default function Login() {
             href="/forgot-password"
             className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
           >
-            🔑 Quên mật khẩu?
+            Quên mật khẩu?
           </Link>
         </p>
 

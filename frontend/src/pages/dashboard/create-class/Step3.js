@@ -233,7 +233,6 @@ export default function Step3() {
             <FormNavButtons onPrev={prevStep} onNext={nextStep} />
           </div>
         </main>
-        <Footer />
       </div>
     </div>
   );

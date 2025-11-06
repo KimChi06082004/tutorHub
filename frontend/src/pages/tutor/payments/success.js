@@ -14,13 +14,13 @@ export default function PaymentSuccess() {
       try {
         const res = await api.put(`/classes/${class_id}/confirm-payment`);
         if (res.data.success) {
-          alert("✅ Thanh toán thành công! Lớp đã được kích hoạt.");
+          alert(" Thanh toán thành công! Lớp đã được kích hoạt.");
           router.push("/tutor/classes/active"); // 👉 chuyển đến trang “Lớp đang dạy”
         } else {
-          alert("⚠️ Không thể cập nhật trạng thái lớp!");
+          alert(" Không thể cập nhật trạng thái lớp!");
         }
       } catch (err) {
-        console.error("❌ Lỗi xác nhận thanh toán:", err);
+        console.error(" Lỗi xác nhận thanh toán:", err);
       } finally {
         setLoading(false);
       }
@@ -39,7 +39,7 @@ export default function PaymentSuccess() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-center">
       <h1 className="text-3xl font-bold text-green-600 mb-4">
-        ✅ Thanh toán thành công!
+        Thanh toán thành công!
       </h1>
       <p className="text-gray-600">
         Hệ thống đã cập nhật lớp vào danh sách “Đang dạy”.

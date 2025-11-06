@@ -23,7 +23,7 @@ export default function SelectedClasses() {
       if (res.data?.success) setRequests(res.data.data || []);
       else setRequests([]);
     } catch (err) {
-      console.error("❌ Lỗi tải danh sách lời mời:", err);
+      console.error(" Lỗi tải danh sách lời mời:", err);
       setRequests([]);
     } finally {
       setLoading(false);
@@ -42,7 +42,7 @@ export default function SelectedClasses() {
       if (res.data?.success) setClassDetail(res.data.data);
       else setClassDetail(null);
     } catch (err) {
-      console.error("❌ Lỗi tải chi tiết lớp:", err);
+      console.error(" Lỗi tải chi tiết lớp:", err);
       alert("Không thể tải chi tiết lớp này!");
       setClassDetail(null);
     } finally {
@@ -56,14 +56,14 @@ export default function SelectedClasses() {
     try {
       const res = await api.post(`/tutor/selected-classes/${id}/accept`);
       if (res.data?.success) {
-        alert("✅ " + res.data.message);
+        alert(" " + res.data.message);
         setRequests((prev) => prev.filter((r) => r.request_id !== id));
         setSelectedRequest(null);
       } else {
         alert(res.data?.message || "Không thể chấp nhận lớp.");
       }
     } catch (err) {
-      console.error("❌ Lỗi khi chấp nhận lớp:", err);
+      console.error(" Lỗi khi chấp nhận lớp:", err);
       alert(err.response?.data?.message || "Lỗi khi chấp nhận lớp!");
     }
   };
@@ -74,14 +74,14 @@ export default function SelectedClasses() {
     try {
       const res = await api.post(`/tutor/selected-classes/${id}/reject`);
       if (res.data?.success) {
-        alert("❌ " + res.data.message);
+        alert(" " + res.data.message);
         setRequests((prev) => prev.filter((r) => r.request_id !== id));
         setSelectedRequest(null);
       } else {
         alert(res.data?.message || "Không thể từ chối lớp!");
       }
     } catch (err) {
-      console.error("❌ Lỗi từ chối lớp:", err);
+      console.error(" Lỗi từ chối lớp:", err);
       alert(err.response?.data?.message || "Không thể từ chối lớp!");
     }
   };
@@ -119,7 +119,7 @@ export default function SelectedClasses() {
         <main className="flex-1 p-6 md:p-10 mt-[80px]">
           <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-md p-6">
             <h2 className="text-2xl font-semibold mb-4 text-blue-700">
-              📘 Danh sách lớp học viên đã mời bạn dạy
+              Danh sách lớp học viên đã mời bạn dạy
             </h2>
 
             {requests.length === 0 ? (
@@ -144,18 +144,17 @@ export default function SelectedClasses() {
 
                     <div className="text-sm text-gray-700 space-y-1">
                       <p>
-                        👩‍🎓 <b>Học viên:</b> {req.student_name}
+                        <b>Học viên:</b> {req.student_name}
                       </p>
                       <p>
-                        📘 <b>Môn học:</b> {req.class_subject}
+                        <b>Môn học:</b> {req.class_subject}
                       </p>
                       <p>
-                        💵 <b>Học phí:</b>{" "}
-                        {req.tuition_amount?.toLocaleString()} VNĐ/h
+                        <b>Học phí:</b> {req.tuition_amount?.toLocaleString()}{" "}
+                        VNĐ/h
                       </p>
                       <p>
-                        🕒 <b>Lịch học:</b>{" "}
-                        {renderSchedule(req.schedule || "{}")}
+                        <b>Lịch học:</b> {renderSchedule(req.schedule || "{}")}
                       </p>
                     </div>
 
@@ -166,7 +165,7 @@ export default function SelectedClasses() {
                       }}
                       className="mt-4 w-full bg-yellow-400 hover:bg-yellow-500 text-white py-2 rounded-lg font-medium transition"
                     >
-                      🔍 Xem chi tiết lớp
+                      Xem chi tiết lớp
                     </button>
                   </div>
                 ))}
@@ -233,35 +232,35 @@ export default function SelectedClasses() {
               ) : classDetail ? (
                 <>
                   <p>
-                    📘 <b>Môn học:</b> {classDetail.subject}
+                    <b>Môn học:</b> {classDetail.subject}
                   </p>
                   <p>
-                    🎓 <b>Lớp:</b> {classDetail.grade || "Chưa rõ"}
+                    <b>Lớp:</b> {classDetail.grade || "Chưa rõ"}
                   </p>
                   <p>
-                    💵 <b>Học phí:</b>{" "}
+                    <b>Học phí:</b>{" "}
                     {classDetail.tuition_amount?.toLocaleString()} VNĐ/h
                   </p>
                   <p>
-                    🕒 <b>Lịch học:</b>{" "}
+                    <b>Lịch học:</b>{" "}
                     {renderSchedule(classDetail.schedule || "{}")}
                   </p>
                   <p>
-                    📍 <b>Khu vực:</b>{" "}
+                    <b>Khu vực:</b>{" "}
                     {[classDetail.ward, classDetail.city]
                       .filter(Boolean)
                       .join(", ")}
                   </p>
                   <p>
-                    🧾 <b>Yêu cầu:</b>{" "}
+                    <b>Yêu cầu:</b>{" "}
                     {classDetail.requirements || "Không có yêu cầu đặc biệt"}
                   </p>
                   <p>
-                    📝 <b>Mô tả lớp:</b>{" "}
+                    <b>Mô tả lớp:</b>{" "}
                     {classDetail.description || "Không có mô tả."}
                   </p>
                   <p>
-                    👩‍🎓 <b>Học viên:</b> {classDetail.student_name}
+                    <b>Học viên:</b> {classDetail.student_name}
                   </p>
                 </>
               ) : (

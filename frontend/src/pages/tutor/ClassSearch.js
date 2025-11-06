@@ -25,7 +25,7 @@ export default function ClassSearch() {
       const res = await api.get(`/classes/search/classes?${query}`); // ✅ API khác
       setResults(res.data.data || []);
     } catch (err) {
-      console.error("❌ Lỗi tìm kiếm lớp:", err);
+      console.error(" Lỗi tìm kiếm lớp:", err);
       alert("Không thể tìm kiếm lớp học!");
     }
   };

@@ -29,7 +29,7 @@ export default function TutorPayments() {
 
         // ✅ Log sau khi đã có dữ liệu
         console.log(
-          "🕒 Payment deadlines:",
+          "Payment deadlines:",
           withDeadline.map((c) => ({
             id: c.class_id,
             deadline: new Date(c.payment_deadline).toLocaleString(),
@@ -41,7 +41,7 @@ export default function TutorPayments() {
         setClasses([]);
       }
     } catch (err) {
-      console.error("❌ Lỗi tải danh sách:", err);
+      console.error(" Lỗi tải danh sách:", err);
     } finally {
       setLoading(false);
     }
@@ -128,10 +128,10 @@ export default function TutorPayments() {
       if (res.data.success) {
         window.location.href = res.data.url;
       } else {
-        alert("❌ Không thể tạo phiên thanh toán Stripe!");
+        alert(" Không thể tạo phiên thanh toán Stripe!");
       }
     } catch (err) {
-      console.error("❌ Lỗi thanh toán:", err);
+      console.error(" Lỗi thanh toán:", err);
       alert("Lỗi khi khởi tạo thanh toán online!");
     }
   };
@@ -144,12 +144,12 @@ export default function TutorPayments() {
     try {
       const res = await api.put(`/classes/${id}/cancel-payment`);
       if (res.data.success) {
-        alert("🚫 Đã hủy thanh toán!");
+        alert(" Đã hủy thanh toán!");
         setClasses((prev) => prev.filter((c) => c.class_id !== id));
         setSelectedClass(null);
       }
     } catch {
-      alert("❌ Lỗi khi hủy thanh toán!");
+      alert(" Lỗi khi hủy thanh toán!");
     }
   };
 
@@ -178,12 +178,12 @@ export default function TutorPayments() {
             {/* ✅ Cột trái - danh sách lớp */}
             <div>
               <h2 className="text-2xl font-semibold mb-4 text-blue-700">
-                💰 Lớp cần thanh toán (Cọc 25%)
+                Lớp cần thanh toán (Cọc 25%)
               </h2>
 
               {classes.length === 0 ? (
                 <div className="text-gray-500 italic text-center">
-                  ✅ Không có lớp nào đang chờ thanh toán.
+                  Không có lớp nào đang chờ thanh toán.
                 </div>
               ) : (
                 classes.map((cls) => {
@@ -220,11 +220,11 @@ export default function TutorPayments() {
                             {cls.sessions_per_week || 1} buổi/tuần
                           </p>
                           <p className="font-semibold text-gray-800">
-                            💵 Học phí gốc:{" "}
+                            Học phí gốc:{" "}
                             {Number(total * 1000).toLocaleString("vi-VN")} VNĐ
                           </p>
                           <p className="font-semibold text-green-600">
-                            💰 Cần thanh toán (25%):{" "}
+                            Cần thanh toán (25%):{" "}
                             {Number(deposit * 1000).toLocaleString("vi-VN")} VNĐ
                           </p>
                         </div>
@@ -271,7 +271,7 @@ export default function TutorPayments() {
                           {Number(total * 1000).toLocaleString("vi-VN")} VNĐ
                         </p>
                         <p className="text-gray-800 font-medium">
-                          💰 Thanh toán 25%:{" "}
+                          Thanh toán 25%:{" "}
                           <span className="text-blue-700 font-bold text-2xl">
                             {Number(deposit * 1000).toLocaleString("vi-VN")} VNĐ
                           </span>
@@ -286,13 +286,13 @@ export default function TutorPayments() {
                           onClick={() => markPaid(selectedClass.class_id)}
                           className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold"
                         >
-                          💰 Thanh toán 25%
+                          Thanh toán 25%
                         </button>
                         <button
                           onClick={() => cancelPayment(selectedClass.class_id)}
                           className="bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-semibold"
                         >
-                          🚫 Hủy thanh toán
+                          Hủy thanh toán
                         </button>
                       </div>
 
@@ -307,8 +307,7 @@ export default function TutorPayments() {
                 })()
               ) : (
                 <div className="text-gray-500 italic text-center py-10">
-                  👈 Chọn một lớp ở danh sách bên trái để xem chi tiết thanh
-                  toán
+                  Chọn một lớp ở danh sách bên trái để xem chi tiết thanh toán
                 </div>
               )}
             </div>

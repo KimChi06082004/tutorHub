@@ -36,7 +36,7 @@ export default function Navbar() {
       }}
     >
       <div style={{ cursor: "pointer" }} onClick={goDashboard}>
-        <strong>📚 DayThem App</strong>
+        <strong>DayThem App</strong>
       </div>
       <div>
         <span style={{ marginRight: 15 }}>

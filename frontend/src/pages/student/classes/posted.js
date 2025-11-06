@@ -15,7 +15,7 @@ export default function PostedClasses() {
         const res = await api.get("/classes");
         setClasses(res.data.data || []);
       } catch (err) {
-        console.error("❌ Lỗi tải danh sách lớp:", err);
+        console.error(" Lỗi tải danh sách lớp:", err);
       } finally {
         setLoading(false);
       }
@@ -33,7 +33,7 @@ export default function PostedClasses() {
       // Cập nhật lại danh sách sau khi hủy
       setClasses((prev) => prev.filter((c) => c.class_id !== cls.class_id));
     } catch (err) {
-      console.error("❌ Lỗi hủy lớp:", err);
+      console.error(" Lỗi hủy lớp:", err);
       alert("Không thể hủy lớp. Vui lòng thử lại sau.");
     }
   };
@@ -61,7 +61,7 @@ export default function PostedClasses() {
 
             {/* Tiêu đề */}
             <h2 className="text-2xl font-semibold text-[#003366] mb-6 flex items-center gap-2">
-              📘 Lớp đã đăng
+              Lớp đã đăng
             </h2>
 
             {loading ? (
@@ -83,7 +83,7 @@ export default function PostedClasses() {
                     <div className="absolute top-4 right-4">
                       {cls.status === "APPROVED_VISIBLE" ? (
                         <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
-                          ✅ Đã duyệt
+                          Đã duyệt
                         </span>
                       ) : cls.status === "PENDING_ADMIN_APPROVAL" ? (
                         <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full font-medium">

@@ -52,7 +52,7 @@ router.post("/", verifyToken, async (req, res) => {
       if (!tRows.length) {
         return res.status(400).json({
           success: false,
-          message: "⚠️ Bạn cần hoàn thiện hồ sơ (CV) trước khi ứng tuyển lớp!",
+          message: "Bạn cần hoàn thiện hồ sơ (CV) trước khi ứng tuyển lớp!",
         });
       }
 
@@ -61,7 +61,7 @@ router.post("/", verifyToken, async (req, res) => {
         return res.status(403).json({
           success: false,
           message:
-            "⚠️ Hồ sơ của bạn chưa được duyệt. Vui lòng chờ admin xét duyệt trước khi ứng tuyển lớp!",
+            " Hồ sơ của bạn chưa được duyệt. Vui lòng chờ admin xét duyệt trước khi ứng tuyển lớp!",
         });
       }
 

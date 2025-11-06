@@ -303,11 +303,11 @@ export default function ClassApprovals({ classes = [], onRefresh }) {
     try {
       setLoading(true);
       await api.put(`/classes/${id}/approve`);
-      alert("✅ Lớp đã được duyệt!");
+      alert(" Lớp đã được duyệt!");
       setSelected(null);
       onRefresh?.();
     } catch {
-      alert("❌ Lỗi khi duyệt lớp!");
+      alert(" Lỗi khi duyệt lớp!");
     } finally {
       setLoading(false);
     }
@@ -316,14 +316,14 @@ export default function ClassApprovals({ classes = [], onRefresh }) {
   // ✅ Từ chối lớp
   const handleReject = async (id) => {
     if (!reason.trim()) {
-      alert("⚠️ Vui lòng nhập lý do từ chối!");
+      alert(" Vui lòng nhập lý do từ chối!");
       return;
     }
     if (!confirm("Bạn có chắc muốn từ chối lớp này?")) return;
     try {
       setLoading(true);
       await api.put(`/classes/${id}/reject`, { reason });
-      alert("❌ Lớp đã bị từ chối!");
+      alert(" Lớp đã bị từ chối!");
       setReason("");
       setSelected(null);
       onRefresh?.();
@@ -340,11 +340,11 @@ export default function ClassApprovals({ classes = [], onRefresh }) {
     try {
       setLoading(true);
       await api.put(`/classes/${id}/approve-cancel`);
-      alert("✅ Lớp đã được duyệt hủy!");
+      alert(" Lớp đã được duyệt hủy!");
       setSelected(null);
       onRefresh?.();
     } catch {
-      alert("❌ Lỗi khi duyệt hủy lớp!");
+      alert(" Lỗi khi duyệt hủy lớp!");
     } finally {
       setLoading(false);
     }
@@ -352,15 +352,15 @@ export default function ClassApprovals({ classes = [], onRefresh }) {
 
   // ✅ Xóa lớp (Admin-only)
   const handleDelete = async (id) => {
-    if (!confirm("⚠️ Bạn có chắc chắn muốn xóa vĩnh viễn lớp này?")) return;
+    if (!confirm(" Bạn có chắc chắn muốn xóa vĩnh viễn lớp này?")) return;
     try {
       setLoading(true);
       await api.delete(`/classes/${id}`);
-      alert("🗑️ Lớp đã bị xóa vĩnh viễn!");
+      alert(" Lớp đã bị xóa vĩnh viễn!");
       setSelected(null);
       onRefresh?.();
     } catch {
-      alert("❌ Lỗi khi xóa lớp!");
+      alert(" Lỗi khi xóa lớp!");
     } finally {
       setLoading(false);
     }
@@ -485,7 +485,7 @@ export default function ClassApprovals({ classes = [], onRefresh }) {
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
           <div className="bg-white rounded-2xl shadow-xl p-6 w-[550px] max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <span className="text-blue-500">📘</span> Chi tiết lớp #
+              <span className="text-blue-500"></span> Chi tiết lớp #
               {selected.class_id}
             </h3>
 
@@ -549,14 +549,14 @@ export default function ClassApprovals({ classes = [], onRefresh }) {
                     disabled={loading}
                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
                   >
-                    ✅ Duyệt
+                    Duyệt
                   </button>
                   <button
                     onClick={() => handleReject(selected.class_id)}
                     disabled={loading}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
                   >
-                    ❌ Từ chối
+                    Từ chối
                   </button>
                 </>
               )}
@@ -566,7 +566,7 @@ export default function ClassApprovals({ classes = [], onRefresh }) {
                 disabled={loading}
                 className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg"
               >
-                🕓 Duyệt hủy
+                Duyệt hủy
               </button>
               <button
                 onClick={() => handleDelete(selected.class_id)}

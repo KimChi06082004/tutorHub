@@ -22,7 +22,7 @@ export default function StudentCompletedClasses() {
       const res = await api.get("/classes/student/completed");
       if (res.data.success) setClasses(res.data.data);
     } catch (err) {
-      console.error("❌ Lỗi tải lớp đã kết thúc:", err);
+      console.error(" Lỗi tải lớp đã kết thúc:", err);
     } finally {
       setLoading(false);
     }
@@ -42,7 +42,7 @@ export default function StudentCompletedClasses() {
         <main className="flex-1 p-6 mt-[70px]">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-2xl font-semibold mb-4 text-purple-700">
-              🏁 Lớp đã kết thúc
+              Lớp đã kết thúc
             </h2>
 
             <div className="flex flex-col lg:flex-row gap-6">
@@ -71,20 +71,18 @@ export default function StudentCompletedClasses() {
                         {cls.subject} - Lớp {cls.grade}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        👨‍🏫 Gia sư: {cls.tutor_name}
+                        Gia sư: {cls.tutor_name}
                       </p>
+                      <p className="text-sm text-gray-600">{cls.tutor_email}</p>
                       <p className="text-sm text-gray-600">
-                        📧 {cls.tutor_email}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        🏠 Địa chỉ: {cls.address || "Chưa có thông tin"}
+                        Địa chỉ: {cls.address || "Chưa có thông tin"}
                       </p>
                       <p className="text-sm text-gray-500">
-                        💰 Học phí: {cls.tuition_amount?.toLocaleString() || 0}{" "}
+                        Học phí: {cls.tuition_amount?.toLocaleString() || 0}{" "}
                         VND/h
                       </p>
                       <p className="text-sm text-gray-500">
-                        🕒 Ngày hoàn thành:{" "}
+                        Ngày hoàn thành:{" "}
                         <b>
                           {cls.completed_at
                             ? new Date(cls.completed_at).toLocaleDateString(
@@ -94,7 +92,7 @@ export default function StudentCompletedClasses() {
                         </b>
                       </p>
                       <p className="mt-2 text-green-600 font-medium">
-                        ✅ Trạng thái: Lớp đã hoàn tất
+                        Trạng thái: Lớp đã hoàn tất
                       </p>
                     </div>
                   ))
@@ -106,35 +104,35 @@ export default function StudentCompletedClasses() {
                 {selectedClass ? (
                   <div className="p-6 rounded-2xl border bg-white shadow-md">
                     <h3 className="text-xl font-semibold text-blue-700 mb-3">
-                      🧾 Chi tiết lớp TN{selectedClass.class_id}
+                      Chi tiết lớp TN{selectedClass.class_id}
                     </h3>
 
                     <div className="space-y-2 text-gray-700">
                       <p>
-                        📘 <b>Môn học:</b> {selectedClass.subject}
+                        <b>Môn học:</b> {selectedClass.subject}
                       </p>
                       <p>
-                        🏫 <b>Khối lớp:</b> Lớp {selectedClass.grade}
+                        <b>Khối lớp:</b> Lớp {selectedClass.grade}
                       </p>
                       <p>
-                        👨‍🏫 <b>Gia sư:</b> {selectedClass.tutor_name}
+                        <b>Gia sư:</b> {selectedClass.tutor_name}
                       </p>
                       <p>
-                        ✉️ <b>Email gia sư:</b>{" "}
+                        <b>Email gia sư:</b>{" "}
                         <span className="text-blue-600">
                           {selectedClass.tutor_email}
                         </span>
                       </p>
                       <p>
-                        🏠 <b>Địa chỉ:</b>{" "}
+                        <b>Địa chỉ:</b>{" "}
                         {selectedClass.address || "Chưa có thông tin"}
                       </p>
                       <p>
-                        💰 <b>Học phí:</b>{" "}
+                        <b>Học phí:</b>{" "}
                         {selectedClass.tuition_amount?.toLocaleString()} VND/h
                       </p>
                       <p>
-                        📅 <b>Ngày hoàn thành:</b>{" "}
+                        <b>Ngày hoàn thành:</b>{" "}
                         {selectedClass.completed_at
                           ? new Date(
                               selectedClass.completed_at
@@ -146,7 +144,7 @@ export default function StudentCompletedClasses() {
                     {/* --- Lịch học --- */}
                     <div className="mt-5 border-t pt-3">
                       <h4 className="font-semibold text-gray-700 mb-2">
-                        🗓️ Thời khóa biểu (Lịch học)
+                        Thời khóa biểu (Lịch học)
                       </h4>
                       <CalendarView
                         schedule={JSON.parse(selectedClass.schedule || "{}")}
@@ -155,7 +153,7 @@ export default function StudentCompletedClasses() {
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400 italic">
-                    👉 Chọn một lớp để xem chi tiết
+                    Chọn một lớp để xem chi tiết
                   </div>
                 )}
               </div>

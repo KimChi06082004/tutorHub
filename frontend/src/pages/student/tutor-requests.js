@@ -11,7 +11,7 @@ export default function TutorRequests() {
     api
       .get("/requests")
       .then((res) => setRequests(res.data.data || []))
-      .catch((err) => console.error("❌ Lỗi tải danh sách ứng tuyển:", err))
+      .catch((err) => console.error(" Lỗi tải danh sách ứng tuyển:", err))
       .finally(() => setLoading(false));
   }, []);
 
@@ -22,14 +22,14 @@ export default function TutorRequests() {
   async function handleRespond(id, status) {
     try {
       const res = await api.put(`/requests/${id}/respond`, { status }); // ✅ dùng PUT, không phải GET
-      alert(res.data?.message || "✅ Cập nhật trạng thái thành công!");
+      alert(res.data?.message || " Cập nhật trạng thái thành công!");
 
       setRequests((prev) =>
         prev.map((r) => (r.request_id === id ? { ...r, status: status } : r))
       );
     } catch (err) {
-      console.error("❌ Lỗi phản hồi:", err.response?.data || err);
-      alert(err.response?.data?.message || "❌ Lỗi phản hồi yêu cầu!");
+      console.error(" Lỗi phản hồi:", err.response?.data || err);
+      alert(err.response?.data?.message || " Lỗi phản hồi yêu cầu!");
     }
   }
 
@@ -56,7 +56,7 @@ export default function TutorRequests() {
 
         <div className="max-w-5xl mx-auto p-6">
           <h2 className="text-2xl font-semibold text-blue-700 mb-6">
-            👨‍🏫 Danh sách gia sư ứng tuyển
+            Danh sách gia sư ứng tuyển
           </h2>
 
           {requests.length === 0 ? (
@@ -75,7 +75,7 @@ export default function TutorRequests() {
                       {r.tutor_name}
                     </h3>
                     <p className="text-gray-500">
-                      📘 Môn: {r.subject} | Trạng thái:{" "}
+                      Môn: {r.subject} | Trạng thái:{" "}
                       <span
                         className={`font-medium ${
                           r.status === "PENDING"
@@ -97,13 +97,13 @@ export default function TutorRequests() {
                         onClick={() => handleRespond(r.request_id, "APPROVED")}
                         className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition"
                       >
-                        ✅ Đồng ý
+                        Đồng ý
                       </button>
                       <button
                         onClick={() => handleRespond(r.request_id, "REJECTED")}
                         className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
                       >
-                        ❌ Từ chối
+                        Từ chối
                       </button>
                     </div>
                   )}

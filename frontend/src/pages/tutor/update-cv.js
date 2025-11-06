@@ -134,15 +134,15 @@ export default function UpdateCV() {
 
   const handleNext = () => {
     if (step === 1 && (!formData.full_name || !formData.cccd || !avatar)) {
-      alert("⚠️ Vui lòng nhập họ tên, CCCD và tải ảnh đại diện!");
+      alert(" Vui lòng nhập họ tên, CCCD và tải ảnh đại diện!");
       return;
     }
     if (step === 2 && (!formData.education_level || !formData.university)) {
-      alert("⚠️ Vui lòng nhập học vấn và trường học!");
+      alert(" Vui lòng nhập học vấn và trường học!");
       return;
     }
     if (step === 3 && (!formData.subject || !formData.hourly_rate)) {
-      alert("⚠️ Vui lòng nhập môn học và học phí!");
+      alert(" Vui lòng nhập môn học và học phí!");
       return;
     }
     setStep((s) => Math.min(5, s + 1));
@@ -155,7 +155,7 @@ export default function UpdateCV() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     if (multiple && certificates.length + files.length > 5) {
-      alert("❌ Chỉ được upload tối đa 5 ảnh chứng chỉ!");
+      alert(" Chỉ được upload tối đa 5 ảnh chứng chỉ!");
       return;
     }
 
@@ -178,7 +178,7 @@ export default function UpdateCV() {
         ]);
       else setter(`${API_BASE.replace("/api", "")}${data.filePath}`);
     } catch (err) {
-      alert("❌ Lỗi upload: " + err.message);
+      alert(" Lỗi upload: " + err.message);
     }
   };
 
@@ -190,7 +190,7 @@ export default function UpdateCV() {
       localStorage.getItem("authToken");
 
     if (!token) {
-      alert("⚠️ Bạn cần đăng nhập trước khi gửi hồ sơ!");
+      alert("Bạn cần đăng nhập trước khi gửi hồ sơ!");
       return;
     }
 
@@ -215,16 +215,16 @@ export default function UpdateCV() {
 
       const data = await res.json();
       if (data.success) {
-        alert("✅ Hồ sơ đã gửi thành công! Vui lòng chờ admin duyệt.");
+        alert(" Hồ sơ đã gửi thành công! Vui lòng chờ admin duyệt.");
         localStorage.removeItem("tutorCVData");
 
         // ✅ CHUYỂN TRANG SAU KHI GỬI THÀNH CÔNG
         router.push("/dashboard/tutor");
       } else {
-        alert("❌ " + (data.message || "Gửi thất bại!"));
+        alert(" " + (data.message || "Gửi thất bại!"));
       }
     } catch (err) {
-      alert("🚨 Lỗi hệ thống: " + err.message);
+      alert(" Lỗi hệ thống: " + err.message);
     }
   };
 
@@ -268,14 +268,14 @@ export default function UpdateCV() {
       <div className="main-content bg-gray-50 min-h-screen p-6 md:p-10">
         <div className="max-w-4xl mx-auto bg-white shadow-md rounded-xl p-6">
           <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 text-center mb-8">
-            🧑‍🏫 Cập nhật hồ sơ gia sư
+            Cập nhật hồ sơ gia sư
           </h2>
 
           {/* ===== BƯỚC 1 ===== */}
           {step === 1 && (
             <div className="space-y-8">
               <h3 className="text-lg font-bold text-gray-700">
-                👤 Thông tin cá nhân
+                Thông tin cá nhân
               </h3>
 
               {/* Avatar tròn */}
@@ -351,7 +351,7 @@ export default function UpdateCV() {
                     </label>{" "}
                     <div className="flex gap-6 mt-2">
                       {" "}
-                      {["Nam", "Nữ", "Khác"].map((gender) => (
+                      {["Nam", "Nữ"].map((gender) => (
                         <label
                           key={gender}
                           className="flex items-center gap-2 cursor-pointer"
@@ -431,9 +431,7 @@ export default function UpdateCV() {
           {/* ===== BƯỚC 2 ===== */}
           {step === 2 && (
             <div className="space-y-6">
-              <h3 className="text-xl font-bold text-gray-700">
-                🎓 Hồ sơ học vấn
-              </h3>
+              <h3 className="text-xl font-bold text-gray-700">Hồ sơ học vấn</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block font-medium text-gray-700">
@@ -513,7 +511,7 @@ export default function UpdateCV() {
           {step === 3 && (
             <div className="space-y-6">
               <h3 className="text-xl font-bold text-gray-700">
-                📘 Môn học & Học phí
+                Môn học & Học phí
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -602,7 +600,7 @@ export default function UpdateCV() {
           {step === 5 && (
             <div className="space-y-6">
               <h3 className="text-xl font-bold text-gray-700">
-                📍 Địa chỉ nơi dạy
+                Địa chỉ nơi dạy
               </h3>
 
               {/* Tỉnh / Thành phố */}
@@ -709,7 +707,7 @@ export default function UpdateCV() {
                 onClick={handleSubmitCV}
                 className="bg-green-600 text-white px-6 py-2 rounded-lg ml-auto hover:bg-green-700"
               >
-                📤 Gửi hồ sơ
+                Gửi hồ sơ
               </button>
             )}
           </div>

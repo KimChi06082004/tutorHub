@@ -115,7 +115,8 @@ router.post("/login", async (req, res) => {
 router.post("/send-otp", async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ success: false, message: "Thiếu email" });
+    if (!email)
+      return res.status(400).json({ success: false, message: "Thiếu email" });
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 phút
@@ -126,12 +127,13 @@ router.post("/send-otp", async (req, res) => {
         "INSERT INTO password_reset_otps (email, otp_code, expires_at) VALUES (?, ?, ?)",
         [email, otp, expiresAt]
       );
-      console.log("✅ OTP saved to database:", otp);
+      console.log(" OTP saved to database:", otp);
     } catch (dbErr) {
-      console.error("❌ Database error:", dbErr.message);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Lỗi database. Có thể bảng password_reset_otps chưa được tạo. Hãy chạy: mysql -u root websitedaythem < backend/create-otp-table.sql" 
+      console.error(" Database error:", dbErr.message);
+      return res.status(500).json({
+        success: false,
+        message:
+          "Lỗi database. Có thể bảng password_reset_otps chưa được tạo. Hãy chạy: mysql -u root websitedaythem < backend/create-otp-table.sql",
       });
     }
 
@@ -139,8 +141,11 @@ router.post("/send-otp", async (req, res) => {
     console.log("Sending OTP via EmailJS to:", email);
     console.log("Service ID:", process.env.EMAILJS_SERVICE_ID);
     console.log("Template ID:", process.env.EMAILJS_TEMPLATE_ID);
-    console.log("Public Key:", process.env.EMAILJS_PUBLIC_KEY ? "Set" : "Missing");
-    
+    console.log(
+      "Public Key:",
+      process.env.EMAILJS_PUBLIC_KEY ? "Set" : "Missing"
+    );
+
     try {
       await emailjs.send(
         process.env.EMAILJS_SERVICE_ID,
@@ -154,24 +159,31 @@ router.post("/send-otp", async (req, res) => {
           publicKey: process.env.EMAILJS_PUBLIC_KEY,
         }
       );
-      console.log("✅ Email sent successfully!");
+      console.log(" Email sent successfully!");
     } catch (emailErr) {
-      console.error("⚠️ EmailJS error:", emailErr.message);
-      console.log("⚠️ Email failed but OTP is saved. Use this OTP for testing:", otp);
+      console.error(" EmailJS error:", emailErr.message);
+      console.log(
+        " Email failed but OTP is saved. Use this OTP for testing:",
+        otp
+      );
       // Vẫn trả về thành công vì OTP đã được lưu
-      return res.json({ 
-        success: true, 
-        message: "✅ OTP đã được tạo (Email failed nhưng bạn có thể dùng OTP này để test): " + otp,
-        otp: otp // Chỉ để test, xóa sau khi production
+      return res.json({
+        success: true,
+        message:
+          " OTP đã được tạo (Email failed nhưng bạn có thể dùng OTP này để test): " +
+          otp,
+        otp: otp, // Chỉ để test, xóa sau khi production
       });
     }
 
-    res.json({ success: true, message: "✅ OTP đã gửi về email của bạn!" });
+    res.json({ success: true, message: " OTP đã gửi về email của bạn!" });
   } catch (err) {
-    console.error("❌ Send OTP error:", err);
+    console.error(" Send OTP error:", err);
     console.error("Error details:", err.message);
     console.error("Error stack:", err.stack);
-    res.status(500).json({ success: false, message: "Không thể gửi OTP: " + err.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Không thể gửi OTP: " + err.message });
   }
 });
 
@@ -197,7 +209,7 @@ router.post("/verify-otp", async (req, res) => {
     if (new Date(record.expires_at) < new Date())
       return res.status(400).json({ message: "Mã OTP đã hết hạn" });
 
-    res.json({ success: true, message: "✅ OTP hợp lệ" });
+    res.json({ success: true, message: " OTP hợp lệ" });
   } catch (err) {
     console.error("Verify OTP error:", err);
     res.status(500).json({ message: "Lỗi xác minh OTP" });
@@ -237,7 +249,7 @@ router.post("/reset-password", async (req, res) => {
       email,
     ]);
 
-    res.json({ success: true, message: "✅ Đặt lại mật khẩu thành công!" });
+    res.json({ success: true, message: " Đặt lại mật khẩu thành công!" });
   } catch (err) {
     console.error("Reset password error:", err);
     res.status(500).json({ message: "Không thể đặt lại mật khẩu" });

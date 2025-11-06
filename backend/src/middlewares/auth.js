@@ -31,11 +31,11 @@ export const verifyToken = (req, res, next) => {
     if (!token)
       return res.status(401).json({
         success: false,
-        message: "❌ Thiếu token xác thực",
+        message: " Thiếu token xác thực",
       });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("✅ Token decode:", decoded);
+    console.log(" Token decode:", decoded);
 
     req.user = {
       user_id: decoded.user_id || decoded.id,
@@ -48,7 +48,7 @@ export const verifyToken = (req, res, next) => {
     console.error("JWT verify error:", error.message);
     return res.status(401).json({
       success: false,
-      message: "❌ Token không hợp lệ hoặc đã hết hạn",
+      message: " Token không hợp lệ hoặc đã hết hạn",
     });
   }
 };
@@ -63,13 +63,13 @@ export const requireRole = (roles = []) => {
     if (!req.user)
       return res.status(401).json({
         success: false,
-        message: "❌ Không có quyền truy cập (chưa xác thực)",
+        message: " Không có quyền truy cập (chưa xác thực)",
       });
 
     if (!allowedRoles.includes(req.user.role))
       return res.status(403).json({
         success: false,
-        message: `🚫 Quyền hạn không đủ (yêu cầu: ${allowedRoles.join(", ")})`,
+        message: ` Quyền hạn không đủ (yêu cầu: ${allowedRoles.join(", ")})`,
       });
 
     next();

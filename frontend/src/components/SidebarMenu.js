@@ -110,7 +110,7 @@ export default function SidebarMenu({ role }) {
             ],
           },
           {
-            title: "📂 Quản lý thư viện",
+            title: " Quản lý thư viện",
             children: [
               { title: "Biên soạn tệp", link: "/dashboard/tutor?view=files" },
               {

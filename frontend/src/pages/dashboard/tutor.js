@@ -59,7 +59,7 @@ export default function TutorDashboard() {
       const res = await api.get(url);
       setClasses(res.data.data || []);
     } catch (err) {
-      console.error("❌ Load classes error:", err);
+      console.error(" Load classes error:", err);
       setClasses([]);
     } finally {
       setLoading(false);
@@ -90,7 +90,7 @@ export default function TutorDashboard() {
       <TopbarTutor />
 
       <div className="main-content p-6">
-        <h2 className="text-2xl font-bold mb-2">📚 Danh sách lớp đang tuyển</h2>
+        <h2 className="text-2xl font-bold mb-2"> Danh sách lớp đang tuyển</h2>
 
         {/* 🔍 Thanh tìm kiếm & Bộ lọc (phiên bản mới) */}
         <div className="bg-white rounded-xl shadow-md p-5 mt-6 mb-8 border border-gray-100">
@@ -161,7 +161,7 @@ export default function TutorDashboard() {
             {loading ? (
               <p>⏳ Đang tải lớp...</p>
             ) : currentClasses.length === 0 ? (
-              <p>⚠️ Hiện chưa có lớp nào khả dụng</p>
+              <p> Hiện chưa có lớp nào khả dụng</p>
             ) : (
               currentClasses.map((cls) => (
                 <div
@@ -172,19 +172,19 @@ export default function TutorDashboard() {
                   <h3 className="text-lg font-semibold text-blue-600 mb-1">
                     Mã lớp: TN{cls.class_id}
                   </h3>
-                  <p className="text-gray-700">📘 Môn: {cls.subject}</p>
+                  <p className="text-gray-700"> Môn: {cls.subject}</p>
                   <p className="text-gray-700">
-                    💰 Học phí:{" "}
+                    Học phí:{" "}
                     {cls.tuition_amount
                       ? `${cls.tuition_amount.toLocaleString()} VND/h`
                       : "Thoả thuận"}
                   </p>
                   <p className="text-gray-700">
-                    👤 Yêu cầu: {cls.teacher_gender || "Không yêu cầu"},{" "}
+                    Yêu cầu: {cls.teacher_gender || "Không yêu cầu"},{" "}
                     {cls.education_level || "Không yêu cầu"}
                   </p>
                   <p className="text-gray-700 mb-2">
-                    📍 Khu vực:{" "}
+                    Khu vực:{" "}
                     {[cls.ward, cls.district, cls.city]
                       .filter(Boolean)
                       .join(", ")}
@@ -261,7 +261,7 @@ export default function TutorDashboard() {
             className="bg-blue-600 text-white px-5 py-2 rounded-lg"
             onClick={() => setShowMap(!showMap)}
           >
-            {showMap ? "Ẩn bản đồ" : "🌍 Lọc theo bản đồ Việt Nam"}
+            {showMap ? "Ẩn bản đồ" : " Lọc theo bản đồ Việt Nam"}
           </button>
 
           {showMap && (

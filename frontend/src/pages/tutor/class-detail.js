@@ -31,7 +31,7 @@ export default function ClassDetailTutor() {
         const res = await api.get(`/classes/${classId}`);
         setClassData(res.data.data);
       } catch (err) {
-        console.error("❌ Lỗi tải lớp:", err);
+        console.error(" Lỗi tải lớp:", err);
       } finally {
         setLoading(false);
       }
@@ -57,11 +57,11 @@ export default function ClassDetailTutor() {
           "Không thể kiểm tra trạng thái ứng tuyển.";
 
         if (msg.includes("hồ sơ") || msg.includes("CV")) {
-          alert("⚠️ Bạn cần hoàn thiện hồ sơ (CV) trước khi ứng tuyển lớp!");
+          alert(" Bạn cần hoàn thiện hồ sơ (CV) trước khi ứng tuyển lớp!");
           // 👉 Tự động chuyển đến trang cập nhật CV
           router.push("/tutor/update-cv");
         } else {
-          console.warn("⚠️ Lỗi kiểm tra ứng tuyển:", msg);
+          console.warn(" Lỗi kiểm tra ứng tuyển:", msg);
         }
       }
     };
@@ -71,8 +71,7 @@ export default function ClassDetailTutor() {
     checkApplied();
   }, [classId]);
 
-  if (loading)
-    return <p className="text-center mt-10">⏳ Đang tải dữ liệu...</p>;
+  if (loading) return <p className="text-center mt-10"> Đang tải dữ liệu...</p>;
   if (!classData)
     return (
       <p className="text-center mt-10 text-red-500">Không tìm thấy lớp.</p>
@@ -120,18 +119,18 @@ export default function ClassDetailTutor() {
 
       // ✅ Nếu gửi thành công
       if (res?.data?.success) {
-        alert("✅ Đã gửi yêu cầu dạy lớp thành công!");
+        alert(" Đã gửi yêu cầu dạy lớp thành công!");
         setHasApplied(true);
         return;
       }
 
       // ⚠️ Nếu backend trả về cảnh báo
       const msg = res?.data?.message || "⚠️ Gửi yêu cầu thất bại!";
-      console.warn("⚠️ Thông báo backend:", msg);
+      console.warn(" Thông báo backend:", msg);
 
       if (msg.includes("ứng tuyển lớp này rồi")) {
         setHasApplied(true);
-        alert("❌ Bạn đã ứng tuyển lớp này rồi!");
+        alert(" Bạn đã ứng tuyển lớp này rồi!");
         return;
       }
 
@@ -140,14 +139,14 @@ export default function ClassDetailTutor() {
         msg.includes("CV") ||
         msg.includes("duyệt hồ sơ")
       ) {
-        alert("⚠️ Bạn cần hoàn thiện hồ sơ (CV) trước khi ứng tuyển lớp!");
+        alert(" Bạn cần hoàn thiện hồ sơ (CV) trước khi ứng tuyển lớp!");
         await router.push("/tutor/update-cv");
         return;
       }
 
-      alert(`⚠️ ${msg}`);
+      alert(` ${msg}`);
     } catch (error) {
-      console.error("❌ Lỗi gửi yêu cầu:", error);
+      console.error(" Lỗi gửi yêu cầu:", error);
 
       const msg =
         error?.data?.message ||
@@ -156,16 +155,14 @@ export default function ClassDetailTutor() {
 
       // ✅ Thông báo cụ thể nếu lỗi liên quan hồ sơ / API
       if (msg.toLowerCase().includes("not found")) {
-        alert("❌ API không tồn tại hoặc đường dẫn backend chưa đúng!");
+        alert(" API không tồn tại hoặc đường dẫn backend chưa đúng!");
       } else if (msg.includes("hồ sơ") || msg.includes("CV")) {
-        alert("⚠️ Bạn cần hoàn thiện hồ sơ (CV) trước khi ứng tuyển lớp!");
+        alert(" Bạn cần hoàn thiện hồ sơ (CV) trước khi ứng tuyển lớp!");
         router.push("/tutor/update-cv");
       } else if (msg.includes("duyệt")) {
-        alert(
-          "⚠️ Hồ sơ của bạn chưa được duyệt, vui lòng chờ admin xét duyệt!"
-        );
+        alert(" Hồ sơ của bạn chưa được duyệt, vui lòng chờ admin xét duyệt!");
       } else {
-        alert(`❌ ${msg}`);
+        alert(` ${msg}`);
       }
     } finally {
       setIsSubmitting(false);
@@ -227,7 +224,7 @@ export default function ClassDetailTutor() {
                   else setHasNext(false);
                 } catch (err) {
                   if (err.response?.status === 404) setHasNext(false);
-                  else console.error("❌ Lỗi lấy lớp kế tiếp:", err);
+                  else console.error(" Lỗi lấy lớp kế tiếp:", err);
                 }
               }}
               className={`flex items-center gap-2 border px-4 py-2 rounded-lg shadow-sm transition ${
@@ -373,10 +370,10 @@ export default function ClassDetailTutor() {
               } text-white font-semibold px-8 py-3 rounded-lg shadow-md transition`}
             >
               {hasApplied
-                ? "✅ Đã gửi yêu cầu"
+                ? " Đã gửi yêu cầu"
                 : isSubmitting
-                ? "⏳ Đang gửi..."
-                : "📩 Gửi yêu cầu dạy"}
+                ? " Đang gửi..."
+                : " Gửi yêu cầu dạy"}
             </button>
           </div>
         </div>

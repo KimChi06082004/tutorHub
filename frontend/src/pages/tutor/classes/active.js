@@ -16,7 +16,7 @@ export default function ActiveClasses() {
         const res = await api.get("/classes/tutor/active");
         if (res.data.success) setClasses(res.data.data);
       } catch (err) {
-        console.error("❌ Lỗi tải danh sách lớp đang dạy:", err);
+        console.error(" Lỗi tải danh sách lớp đang dạy:", err);
       } finally {
         setLoading(false);
       }
@@ -192,7 +192,7 @@ export default function ActiveClasses() {
             {/* ✅ Cột trái */}
             <div>
               <h2 className="text-2xl font-semibold mb-4 text-blue-700">
-                👨‍🏫 Lớp đang dạy
+                Lớp đang dạy
               </h2>
 
               {classes.length === 0 ? (
@@ -218,14 +218,14 @@ export default function ActiveClasses() {
                         {cls.subject} - Lớp {cls.grade}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        👩‍🎓 {cls.student_name}
+                        {cls.student_name}
                       </p>
                       <p className="text-sm text-gray-600">
-                        📧 {cls.student_email}
+                        {cls.student_email}
                       </p>
                       <p className="text-sm text-gray-600">
                         <p>
-                          <b>🏠 Địa chỉ:</b>{" "}
+                          <b> Địa chỉ:</b>{" "}
                           {selected
                             ? [
                                 selected.address || "",
@@ -244,13 +244,13 @@ export default function ActiveClasses() {
                         <b>{translateStatus(cls.payment_status, cls.status)}</b>
                       </p>
                       <p className="text-sm text-gray-600">
-                        📅 Ngày bắt đầu:{" "}
+                        Ngày bắt đầu:{" "}
                         <b>
                           {new Date(cls.start_date).toLocaleDateString("vi-VN")}
                         </b>
                       </p>
                       <p className="text-sm text-gray-600">
-                        ⏰ Ngày kết thúc:{" "}
+                        Ngày kết thúc:{" "}
                         <b>
                           {new Date(cls.end_date).toLocaleDateString("vi-VN")}
                         </b>
@@ -288,13 +288,13 @@ export default function ActiveClasses() {
                   <hr className="my-3" />
 
                   <h3 className="text-blue-700 font-semibold mb-2">
-                    🗓️ Thời khóa biểu (Lịch học)
+                    Thời khóa biểu (Lịch học)
                   </h3>
                   {renderCalendar(selected)}
                 </div>
               ) : (
                 <div className="text-gray-500 italic text-center py-10">
-                  👈 Chọn một lớp để xem chi tiết
+                  Chọn một lớp để xem chi tiết
                 </div>
               )}
             </div>

@@ -30,7 +30,7 @@ export default function TutorDetail() {
         const res = await api.get("/tutors");
         setAllTutors(res.data.data || []);
       } catch (err) {
-        console.error("❌ Lỗi tải danh sách gia sư:", err);
+        console.error(" Lỗi tải danh sách gia sư:", err);
       }
     };
     fetchAllTutors();
@@ -45,7 +45,7 @@ export default function TutorDetail() {
         const res = await api.get(`/tutors/${id}`);
         setTutor(res.data.data);
       } catch (err) {
-        console.error("❌ Lỗi tải hồ sơ gia sư:", err);
+        console.error(" Lỗi tải hồ sơ gia sư:", err);
       } finally {
         setLoading(false);
       }
@@ -65,7 +65,7 @@ export default function TutorDetail() {
         );
         setClasses(validClasses);
       } catch (err) {
-        console.error("❌ Lỗi tải lớp học:", err);
+        console.error(" Lỗi tải lớp học:", err);
       }
     };
 
@@ -87,7 +87,7 @@ export default function TutorDetail() {
         );
         setIsRequested(exists);
       } catch (err) {
-        console.error("❌ Lỗi kiểm tra yêu cầu:", err);
+        console.error(" Lỗi kiểm tra yêu cầu:", err);
       }
     };
     checkRequest();
@@ -111,7 +111,7 @@ export default function TutorDetail() {
   // ✅ Gửi yêu cầu học
   const handleSendRequest = async () => {
     if (!selectedClass) {
-      alert("⚠️ Vui lòng chọn lớp học bạn đã đăng!");
+      alert(" Vui lòng chọn lớp học bạn đã đăng!");
       return;
     }
 
@@ -126,21 +126,20 @@ export default function TutorDetail() {
       const res = await api.post("/requests", payload);
 
       if (res.data.success) {
-        alert("✅ Đã gửi yêu cầu học thành công!");
+        alert(" Đã gửi yêu cầu học thành công!");
         setIsRequested(true);
       } else {
-        alert("⚠️ " + (res.data.message || "Không gửi được yêu cầu!"));
+        alert(" " + (res.data.message || "Không gửi được yêu cầu!"));
       }
     } catch (err) {
       const msg =
-        err.response?.data?.message ||
-        "🚨 Đã xảy ra lỗi, vui lòng thử lại sau.";
+        err.response?.data?.message || " Đã xảy ra lỗi, vui lòng thử lại sau.";
       if (msg.includes("Trùng lịch")) {
-        alert("⏰ " + msg);
+        alert(" " + msg);
       } else if (msg.includes("3 yêu cầu")) {
-        alert("⚠️ " + msg);
+        alert(" " + msg);
       } else {
-        alert("❌ " + msg);
+        alert(" " + msg);
       }
     }
   };
@@ -148,7 +147,7 @@ export default function TutorDetail() {
   if (loading)
     return <p className="p-6 text-gray-500">⏳ Đang tải hồ sơ gia sư...</p>;
   if (!tutor)
-    return <p className="p-6 text-red-500">❌ Không tìm thấy gia sư.</p>;
+    return <p className="p-6 text-red-500"> Không tìm thấy gia sư.</p>;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -210,7 +209,7 @@ export default function TutorDetail() {
                     disabled
                     className="bg-gray-400 text-white px-6 py-2 rounded-lg shadow mt-4 cursor-not-allowed"
                   >
-                    ✅ Đã gửi yêu cầu
+                    Đã gửi yêu cầu
                   </button>
                 ) : (
                   <button
@@ -226,7 +225,7 @@ export default function TutorDetail() {
             {/* ✅ Chọn lớp học */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold mb-3 text-gray-800 border-l-4 border-orange-500 pl-2">
-                🎯 Chọn lớp học bạn đã đăng
+                Chọn lớp học bạn đã đăng
               </h3>
 
               {classes.length === 0 ? (
@@ -252,16 +251,16 @@ export default function TutorDetail() {
                       }`}
                     >
                       <p className="font-semibold text-gray-800">
-                        🏷️ Mã lớp: {c.class_id}
+                        Mã lớp: {c.class_id}
                       </p>
                       <p className="text-sm text-gray-600">
-                        📘 Môn học: {c.subject}
+                        Môn học: {c.subject}
                       </p>
                       <p className="text-sm text-gray-600">
-                        💵 {c.tuition_amount?.toLocaleString()} đ/giờ
+                        {c.tuition_amount?.toLocaleString()} đ/giờ
                       </p>
                       <p className="text-sm text-gray-600">
-                        📍 {c.city || "Chưa rõ khu vực"}
+                        {c.city || "Chưa rõ khu vực"}
                       </p>
                     </div>
                   ))}
@@ -273,29 +272,27 @@ export default function TutorDetail() {
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-gray-800">
-                  📘 Thông tin người dạy
+                  Thông tin người dạy
                 </h3>
                 <ul className="text-gray-700 text-sm space-y-2">
+                  <li>Trình độ: {tutor.education_level || "Chưa cập nhật"}</li>
+                  <li>Chuyên ngành: {tutor.major || "Chưa cập nhật"}</li>
+                  <li> Trường: {tutor.university || "Chưa cập nhật"}</li>
+                  <li>Kinh nghiệm: {tutor.experience || "Chưa cập nhật"}</li>
                   <li>
-                    🎓 Trình độ: {tutor.education_level || "Chưa cập nhật"}
-                  </li>
-                  <li>📚 Chuyên ngành: {tutor.major || "Chưa cập nhật"}</li>
-                  <li>🏫 Trường: {tutor.university || "Chưa cập nhật"}</li>
-                  <li>💼 Kinh nghiệm: {tutor.experience || "Chưa cập nhật"}</li>
-                  <li>
-                    💸 Học phí:{" "}
+                    Học phí:{" "}
                     {tutor.hourly_rate
                       ? `${tutor.hourly_rate.toLocaleString()} đ/giờ`
                       : "Thoả thuận"}
                   </li>
-                  <li>📖 Môn nhận dạy: {tutor.subject || "Chưa cập nhật"}</li>
-                  <li>🏠 Khu vực: {tutor.city || "Chưa có địa chỉ"}</li>
+                  <li> Môn nhận dạy: {tutor.subject || "Chưa cập nhật"}</li>
+                  <li> Khu vực: {tutor.city || "Chưa có địa chỉ"}</li>
                 </ul>
               </div>
 
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-gray-800">
-                  🗺️ Địa chỉ
+                  Địa chỉ
                 </h3>
                 <div className="w-full h-52 rounded-lg overflow-hidden border mb-2">
                   <VietnamMap
@@ -318,7 +315,7 @@ export default function TutorDetail() {
               {/* Giới thiệu bản thân */}
               <div className="mt-4">
                 <h4 className="font-semibold text-gray-800 mb-1">
-                  🧾 Giới thiệu bản thân
+                  Giới thiệu bản thân
                 </h4>
                 <p className="text-sm text-gray-700 bg-white p-3 rounded-md border">
                   {tutor.bio ||
@@ -328,9 +325,7 @@ export default function TutorDetail() {
 
               {/* Chứng chỉ */}
               <div className="mt-4">
-                <h4 className="font-semibold text-gray-800 mb-2">
-                  🎓 Chứng chỉ
-                </h4>
+                <h4 className="font-semibold text-gray-800 mb-2">Chứng chỉ</h4>
 
                 {tutor.certificates ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

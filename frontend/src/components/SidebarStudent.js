@@ -8,7 +8,7 @@ export default function SidebarStudent() {
 
   // 🧠 Hàm hiển thị toast “Đang phát triển”
   const notifyDeveloping = () =>
-    toast("🚧 Tính năng đang được phát triển!", {
+    toast(" Tính năng đang được phát triển!", {
       icon: "🛠️",
       style: {
         borderRadius: "10px",

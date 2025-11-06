@@ -33,6 +33,7 @@ export default function SidebarTutor() {
     {
       label: "Cập nhật CV",
       icon: <FilePen size={20} />,
+      path: "tutor/update-cv",
       type: "dev",
     },
     {

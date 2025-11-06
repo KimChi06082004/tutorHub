@@ -22,7 +22,7 @@ export default function StudentNotifications() {
       const res = await api.get("/notifications");
       if (res.data.success) setNotifications(res.data.data);
     } catch (err) {
-      console.error("❌ Lỗi tải thông báo:", err);
+      console.error(" Lỗi tải thông báo:", err);
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ export default function StudentNotifications() {
         }
       }
     } catch (err) {
-      console.error("❌ Lỗi đánh dấu đã đọc:", err);
+      console.error(" Lỗi đánh dấu đã đọc:", err);
     }
   };
 

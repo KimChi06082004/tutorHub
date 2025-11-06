@@ -14,7 +14,7 @@ export default function TutorRequests() {
         const res = await api.get("/requests");
         if (res.data.success) setRequests(res.data.data);
       } catch (err) {
-        console.error("❌ Lỗi tải yêu cầu:", err);
+        console.error(" Lỗi tải yêu cầu:", err);
       } finally {
         setLoading(false);
       }
@@ -33,14 +33,12 @@ export default function TutorRequests() {
         );
       }
     } catch (err) {
-      alert("🚨 Lỗi cập nhật trạng thái: " + err.message);
+      alert(" Lỗi cập nhật trạng thái: " + err.message);
     }
   };
 
   if (loading)
-    return (
-      <p className="p-6 text-gray-500">⏳ Đang tải danh sách yêu cầu...</p>
-    );
+    return <p className="p-6 text-gray-500"> Đang tải danh sách yêu cầu...</p>;
 
   return (
     <div>
@@ -49,7 +47,7 @@ export default function TutorRequests() {
 
       <div className="ml-56 pt-[80px] p-6 bg-gray-50 min-h-screen">
         <h2 className="text-2xl font-semibold text-[#003366] mb-6 flex items-center">
-          📩 Danh sách yêu cầu học viên
+          Danh sách yêu cầu học viên
         </h2>
 
         {requests.length === 0 ? (
@@ -81,10 +79,10 @@ export default function TutorRequests() {
                 </div>
 
                 <p className="text-sm text-gray-600 mb-2">
-                  💬 {r.message || "Không có lời nhắn"}
+                  {r.message || "Không có lời nhắn"}
                 </p>
                 <p className="text-xs text-gray-400 mb-3">
-                  🕒 Gửi lúc: {new Date(r.created_at).toLocaleString()}
+                  Gửi lúc: {new Date(r.created_at).toLocaleString()}
                 </p>
 
                 {/* Nút phản hồi */}
@@ -94,13 +92,13 @@ export default function TutorRequests() {
                       onClick={() => handleRespond(r.request_id, "APPROVED")}
                       className="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-1 rounded"
                     >
-                      ✅ Đồng ý
+                      Đồng ý
                     </button>
                     <button
                       onClick={() => handleRespond(r.request_id, "REJECTED")}
                       className="bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-1 rounded"
                     >
-                      ❌ Từ chối
+                      Từ chối
                     </button>
                   </div>
                 ) : (
@@ -111,7 +109,7 @@ export default function TutorRequests() {
                         : "text-red-500"
                     }`}
                   >
-                    {r.status === "APPROVED" ? "✅ Đã đồng ý" : "❌ Đã từ chối"}
+                    {r.status === "APPROVED" ? " Đã đồng ý" : " Đã từ chối"}
                   </p>
                 )}
               </div>

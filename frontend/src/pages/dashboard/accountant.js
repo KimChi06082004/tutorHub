@@ -22,7 +22,7 @@ export default function AccountantDashboard() {
   // xử lý payout
   const processPayout = async (id, amount) => {
     await api.put(`/payouts/${id}`, { status: "PAID", amount });
-    alert("Payout processed ✅");
+    alert("Payout processed ");
     setTab("payouts");
   };
 
@@ -30,13 +30,13 @@ export default function AccountantDashboard() {
     <div>
       <Navbar />
       <div style={{ padding: 20 }}>
-        <h2>💼 Accountant Dashboard</h2>
+        <h2>Accountant Dashboard</h2>
 
         {/* Nav */}
         <nav style={{ marginBottom: 20 }}>
-          <button onClick={() => setTab("orders")}>📑 Orders</button>
-          <button onClick={() => setTab("payments")}>💳 Payments</button>
-          <button onClick={() => setTab("payouts")}>💵 Payouts</button>
+          <button onClick={() => setTab("orders")}> Orders</button>
+          <button onClick={() => setTab("payments")}> Payments</button>
+          <button onClick={() => setTab("payouts")}> Payouts</button>
         </nav>
 
         {/* Orders */}
@@ -56,7 +56,7 @@ export default function AccountantDashboard() {
         {/* Payments */}
         {tab === "payments" && (
           <div>
-            <h3>💳 Lịch sử Payments</h3>
+            <h3> Lịch sử Payments</h3>
             <ul>
               {payments.map((p) => (
                 <li key={p.payment_id} style={{ marginBottom: 10 }}>
@@ -71,7 +71,7 @@ export default function AccountantDashboard() {
         {/* Payouts */}
         {tab === "payouts" && (
           <div>
-            <h3>💵 Quản lý Payouts</h3>
+            <h3> Quản lý Payouts</h3>
             <ul>
               {payouts.map((p) => (
                 <li key={p.payout_id} style={{ marginBottom: 10 }}>
@@ -81,7 +81,7 @@ export default function AccountantDashboard() {
                       onClick={() => processPayout(p.payout_id, p.amount)}
                       style={{ marginLeft: 10 }}
                     >
-                      💰 Pay Now
+                      Pay Now
                     </button>
                   )}
                 </li>

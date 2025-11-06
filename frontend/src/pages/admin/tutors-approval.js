@@ -329,7 +329,7 @@ export default function TutorApproval() {
     <div className="flex justify-center bg-white min-h-screen py-10">
       <div className="w-full max-w-6xl text-center">
         <h2 className="text-3xl font-bold text-gray-800 mb-8">
-          📋 Quản lý hồ sơ gia sư
+          Quản lý hồ sơ gia sư
         </h2>
 
         {/* Nút chọn trạng thái */}
@@ -352,7 +352,7 @@ export default function TutorApproval() {
             }`}
             onClick={() => setView("approved")}
           >
-            ✅ Đã duyệt
+            Đã duyệt
           </button>
           <button
             className={`px-5 py-2 rounded-lg font-medium transition ${
@@ -362,7 +362,7 @@ export default function TutorApproval() {
             }`}
             onClick={() => setView("rejected")}
           >
-            ❌ Từ chối
+            Từ chối
           </button>
         </div>
 
@@ -426,7 +426,7 @@ export default function TutorApproval() {
                         }
                         className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded"
                       >
-                        👁️ Xem chi tiết
+                        Xem chi tiết
                       </button>
                     </td>
                   </tr>
@@ -440,7 +440,7 @@ export default function TutorApproval() {
         {view === "pending" && (
           <div className="mt-10 bg-white rounded-2xl shadow-md p-6">
             <h3 className="text-xl font-semibold mb-4 text-gray-800 text-left">
-              📜 Lịch sử duyệt hồ sơ
+              Lịch sử duyệt hồ sơ
             </h3>
             {history.length === 0 ? (
               <p className="text-gray-500 text-center">
@@ -474,11 +474,11 @@ export default function TutorApproval() {
                           <td className="p-2">
                             {h.status === "APPROVED" ? (
                               <span className="text-green-600 font-medium">
-                                ✅ Đã duyệt
+                                Đã duyệt
                               </span>
                             ) : (
                               <span className="text-red-600 font-medium">
-                                ❌ Từ chối
+                                Từ chối
                               </span>
                             )}
                           </td>

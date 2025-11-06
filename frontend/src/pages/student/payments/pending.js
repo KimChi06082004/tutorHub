@@ -17,7 +17,7 @@ export default function StudentPendingPayments() {
       const res = await api.get("/classes/payment/pending");
       if (res.data.success) setClasses(res.data.data);
     } catch (err) {
-      console.error("❌ Lỗi tải danh sách lớp:", err);
+      console.error(" Lỗi tải danh sách lớp:", err);
     } finally {
       setLoading(false);
     }
@@ -34,7 +34,7 @@ export default function StudentPendingPayments() {
         <main className="flex-1 p-6 mt-[70px]">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-2xl font-semibold mb-4 text-blue-700">
-              💰 Danh sách lớp cần thanh toán
+              Danh sách lớp cần thanh toán
             </h2>
 
             {loading ? (
@@ -55,13 +55,13 @@ export default function StudentPendingPayments() {
                     Lớp: {cls.subject} - {cls.grade}
                   </h3>
                   <p className="text-gray-600">
-                    👩‍🏫 Gia sư: {cls.tutor_name || "Chưa có gia sư"}
+                    Gia sư: {cls.tutor_name || "Chưa có gia sư"}
                   </p>
                   <p className="text-gray-600">
-                    💰 Học phí: {cls.tuition_amount?.toLocaleString()} VND
+                    Học phí: {cls.tuition_amount?.toLocaleString()} VND
                   </p>
                   <p className="text-gray-600">
-                    ⏰ Trạng thái:{" "}
+                    Trạng thái:{" "}
                     <span className="text-orange-500 font-medium">
                       ⏳ Đang chờ gia sư thanh toán
                     </span>

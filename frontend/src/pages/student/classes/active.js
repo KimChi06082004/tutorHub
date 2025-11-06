@@ -44,7 +44,7 @@ export default function StudentActiveClasses() {
             {/* --- Cột trái: Danh sách lớp --- */}
             <div>
               <h2 className="text-2xl font-semibold mb-4 text-blue-700">
-                🎓 Lớp đang học
+                Lớp đang học
               </h2>
 
               {classes.length === 0 ? (
@@ -66,20 +66,18 @@ export default function StudentActiveClasses() {
                       {cls.subject} - Lớp {cls.grade}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      👨‍🏫 Gia sư: {cls.tutor_name}
+                      Gia sư: {cls.tutor_name}
                     </p>
-                    <p className="text-sm text-gray-600">
-                      ✉️ {cls.tutor_email}
+                    <p className="text-sm text-gray-600">{cls.tutor_email}</p>
+                    <p className="text-sm text-gray-500">
+                      Địa chỉ: {cls.address || "Chưa có thông tin"}
                     </p>
                     <p className="text-sm text-gray-500">
-                      🏠 Địa chỉ: {cls.address || "Chưa có thông tin"}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      💰 Trạng thái:{" "}
+                      Trạng thái:{" "}
                       <b className="text-green-600">Đã thanh toán | Đang học</b>
                     </p>
                     <p className="text-sm text-gray-500">
-                      📅 Ngày bắt đầu:{" "}
+                      Ngày bắt đầu:{" "}
                       <b>
                         {cls.start_date
                           ? new Date(cls.start_date).toLocaleDateString("vi-VN")
@@ -87,7 +85,7 @@ export default function StudentActiveClasses() {
                       </b>
                     </p>
                     <p className="text-sm text-gray-500">
-                      ⏳ Ngày kết thúc:{" "}
+                      Ngày kết thúc:{" "}
                       <b>
                         {cls.end_date
                           ? new Date(cls.end_date).toLocaleDateString("vi-VN")
@@ -126,7 +124,7 @@ export default function StudentActiveClasses() {
                   <hr className="my-3" />
 
                   <h3 className="font-medium mb-2 text-gray-700">
-                    📅 Thời khóa biểu (Lịch học)
+                    Thời khóa biểu (Lịch học)
                   </h3>
 
                   <CalendarView
@@ -139,7 +137,7 @@ export default function StudentActiveClasses() {
                 </div>
               ) : (
                 <div className="text-gray-500 italic text-center py-10">
-                  👈 Chọn một lớp để xem chi tiết
+                  Chọn một lớp để xem chi tiết
                 </div>
               )}
             </div>

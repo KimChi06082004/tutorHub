@@ -18,7 +18,7 @@ export default function StudentPaidClasses() {
       const res = await api.get("/classes/payment/paid");
       if (res.data.success) setClasses(res.data.data);
     } catch (err) {
-      console.error("❌ Lỗi tải danh sách lớp:", err);
+      console.error(" Lỗi tải danh sách lớp:", err);
     } finally {
       setLoading(false);
     }
@@ -35,7 +35,7 @@ export default function StudentPaidClasses() {
         <main className="flex-1 p-6 mt-[70px]">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-2xl font-semibold mb-4 text-green-700">
-              ✅ Lớp đã thanh toán
+              Lớp đã thanh toán
             </h2>
 
             {loading ? (
@@ -56,15 +56,15 @@ export default function StudentPaidClasses() {
                     Lớp: {cls.subject} - {cls.grade}
                   </h3>
                   <p className="text-gray-600">
-                    👩‍🏫 Gia sư: {cls.tutor_name || "Chưa có gia sư"}
+                    Gia sư: {cls.tutor_name || "Chưa có gia sư"}
                   </p>
                   <p className="text-gray-600">
-                    💰 Học phí: {cls.tuition_amount?.toLocaleString()} VND
+                    Học phí: {cls.tuition_amount?.toLocaleString()} VND
                   </p>
                   <p className="text-gray-600">
-                    ⏰ Trạng thái:{" "}
+                    Trạng thái:{" "}
                     <span className="text-green-600 font-medium">
-                      ✅ Đã thanh toán
+                      Đã thanh toán
                     </span>
                   </p>
                 </div>

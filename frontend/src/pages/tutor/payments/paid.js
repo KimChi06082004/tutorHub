@@ -25,7 +25,7 @@ export default function TutorPaid() {
 
         <main className="p-8 mt-[70px]">
           <h2 className="text-2xl font-bold mb-6 text-green-700 flex items-center gap-2">
-            💰 Danh sách lớp đã thanh toán
+            Danh sách lớp đã thanh toán
           </h2>
 
           {classes.length === 0 ? (
@@ -48,15 +48,15 @@ export default function TutorPaid() {
                   <h3 className="font-semibold text-lg text-green-700 mb-2">
                     Lớp TN{c.class_id}
                   </h3>
-                  <p className="text-gray-700">📘 Môn: {c.subject}</p>
+                  <p className="text-gray-700"> Môn: {c.subject}</p>
                   <p className="text-gray-700">
-                    💸 Học phí:{" "}
+                    Học phí:{" "}
                     <span className="font-semibold text-green-700">
                       {Number(c.tuition_amount * 1000).toLocaleString()} VNĐ
                     </span>
                   </p>
                   <p className="text-gray-700">
-                    🗓️ Trạng thái:{" "}
+                    Trạng thái:{" "}
                     <span className="text-green-600">Đã thanh toán</span>
                   </p>
 

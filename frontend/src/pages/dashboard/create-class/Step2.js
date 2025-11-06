@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import Sidebar from "../../../components/Sidebar";
 import TopbarStudent from "../../../components/TopbarStudent";
 import Footer from "../../../components/Footer";
 import StepProgress from "./components/StepProgress";
@@ -163,7 +162,6 @@ export default function Step2() {
             <FormNavButtons onPrev={prevStep} onNext={nextStep} />
           </div>
         </main>
-        <Footer />
       </div>
     </div>
   );

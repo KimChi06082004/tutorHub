@@ -131,7 +131,7 @@ export default function Chatbot() {
           <div className="p-3 h-64 overflow-y-auto text-sm whitespace-pre-line bg-gray-50">
             {messages.length === 0 && (
               <p className="text-gray-500 italic text-center mt-20">
-                👋 Xin chào {userName || (role === "tutor" ? "Gia sư" : "bạn")}!
+                Xin chào {userName || (role === "tutor" ? "Gia sư" : "bạn")}!
                 <br />
                 Mình là chatbot hỗ trợ DạyThêm.
                 <br />

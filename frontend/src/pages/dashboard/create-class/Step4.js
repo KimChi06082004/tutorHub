@@ -68,7 +68,7 @@ export default function Step4() {
       const step3 = JSON.parse(localStorage.getItem("classStep3") || "{}");
 
       if (!step1.subject || !step1.grade) {
-        alert("⚠️ Thiếu thông tin môn học hoặc lớp học!");
+        alert(" Thiếu thông tin môn học hoặc lớp học!");
         setLoading(false);
         return;
       }
@@ -100,7 +100,7 @@ export default function Step4() {
       console.log("📦 Payload gửi backend:", payload);
 
       const res = await api.post("/classes", payload);
-      alert(res.data.message || "✅ Đăng lớp thành công!");
+      alert(res.data.message || " Đăng lớp thành công!");
 
       ["classStep1", "classStep2", "classStep3", "classStep4"].forEach((k) =>
         localStorage.removeItem(k)
@@ -108,7 +108,7 @@ export default function Step4() {
 
       router.push("/dashboard/student");
     } catch (err) {
-      console.error("❌ Lỗi tạo lớp:", err.response?.data || err.message);
+      console.error(" Lỗi tạo lớp:", err.response?.data || err.message);
       if (err.response?.status === 401) {
         alert("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!");
       } else {
@@ -128,11 +128,11 @@ export default function Step4() {
           <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow p-8">
             <StepProgress current={4} />
 
-            <h2 className="text-2xl font-semibold mb-6">🕒 Chọn lịch học</h2>
+            <h2 className="text-2xl font-semibold mb-6"> Chọn lịch học</h2>
 
             {step3Data && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm">
-                <p className="font-semibold mb-1">📍 Khu vực dạy:</p>
+                <p className="font-semibold mb-1"> Khu vực dạy:</p>
                 <p>
                   {[
                     step3Data.address,
@@ -213,11 +213,10 @@ export default function Step4() {
             <FormNavButtons
               onPrev={prevStep}
               onNext={handleSubmit}
-              nextText={loading ? "Đang đăng..." : "✅ Đăng lớp"}
+              nextText={loading ? "Đang đăng..." : " Đăng lớp"}
             />
           </div>
         </main>
-        <Footer />
       </div>
     </div>
   );

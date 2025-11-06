@@ -91,7 +91,7 @@ export default function StudentDashboard() {
 
       {/* Nội dung chính */}
       <div className="main-content p-6">
-        <h2 className="text-2xl font-bold mb-4">👩‍🏫 Danh sách gia sư</h2>
+        <h2 className="text-2xl font-bold mb-4"> Danh sách gia sư</h2>
 
         {/* Bộ lọc tìm kiếm */}
         <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-6">
@@ -163,7 +163,7 @@ export default function StudentDashboard() {
             {loading ? (
               <p>⏳ Đang tải danh sách gia sư...</p>
             ) : currentTutors.length === 0 ? (
-              <p>Không có gia sư nào phù hợp 😢</p>
+              <p>Không có gia sư nào phù hợp </p>
             ) : (
               currentTutors.map((t) => (
                 <div
@@ -246,7 +246,7 @@ export default function StudentDashboard() {
             className="bg-blue-600 text-white px-5 py-2 rounded-lg"
             onClick={() => setShowMap(!showMap)}
           >
-            {showMap ? "Ẩn bản đồ" : "🌍 Lọc theo bản đồ Việt Nam"}
+            {showMap ? "Ẩn bản đồ" : " Lọc theo bản đồ Việt Nam"}
           </button>
 
           {showMap && (
@@ -263,8 +263,6 @@ export default function StudentDashboard() {
             </div>
           )}
         </div>
-
-        <Footer />
       </div>
     </div>
   );

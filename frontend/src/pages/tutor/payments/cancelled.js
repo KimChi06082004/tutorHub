@@ -15,7 +15,7 @@ export default function CancelledPayments() {
         if (res.data.success) setClasses(res.data.data || []);
         else setClasses([]);
       } catch (err) {
-        console.error("❌ Lỗi tải danh sách:", err);
+        console.error(" Lỗi tải danh sách:", err);
       } finally {
         setLoading(false);
       }
@@ -43,7 +43,7 @@ export default function CancelledPayments() {
         <main className="flex-1 p-6 mt-[70px]">
           <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-md p-6">
             <h2 className="text-2xl font-semibold text-red-600 mb-4">
-              ❌ Danh sách lớp đã hủy hoặc hết hạn thanh toán
+              Danh sách lớp đã hủy hoặc hết hạn thanh toán
             </h2>
 
             {classes.length === 0 ? (
@@ -77,11 +77,11 @@ export default function CancelledPayments() {
                             {cls.grade || "Không rõ"}
                           </p>
                           <p className="text-sm text-gray-600">
-                            💵 Học phí gốc:{" "}
+                            Học phí gốc:{" "}
                             {Number(total * 1000).toLocaleString("vi-VN")} VNĐ
                           </p>
                           <p className="text-sm text-red-600 mt-1">
-                            ⚠️ Lý do: {reason}
+                            Lý do: {reason}
                           </p>
                         </div>
                         <span

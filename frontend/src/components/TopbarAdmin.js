@@ -44,7 +44,7 @@ export default function TopbarAdmin() {
               : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
           }`}
         >
-          👤 Người dùng
+          Quản lý người dùng
         </button>
 
         <button
@@ -55,7 +55,7 @@ export default function TopbarAdmin() {
               : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
           }`}
         >
-          📚 Lớp học
+          Quản lý lớp học
         </button>
 
         <button
@@ -66,7 +66,7 @@ export default function TopbarAdmin() {
               : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
           }`}
         >
-          🎓 Gia sư
+          Quản lý hồ sơ gia sư
         </button>
 
         <button
@@ -77,7 +77,7 @@ export default function TopbarAdmin() {
               : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
           }`}
         >
-          💰 Doanh thu
+          Quản lý doanh thu
         </button>
       </div>
 
@@ -87,7 +87,7 @@ export default function TopbarAdmin() {
           onClick={handleLogout}
           className="text-sm font-medium bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition"
         >
-          🚪 Đăng xuất
+          Đăng xuất
         </button>
       </div>
     </header>

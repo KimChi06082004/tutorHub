@@ -23,7 +23,7 @@ export default function TutorNotifications() {
       const res = await api.get("/notifications"); // ✅ backend tự lọc user
       if (res.data.success) setNotifications(res.data.data);
     } catch (err) {
-      console.error("❌ Lỗi tải thông báo:", err);
+      console.error(" Lỗi tải thông báo:", err);
     } finally {
       setLoading(false);
     }
@@ -69,7 +69,7 @@ export default function TutorNotifications() {
         }
       }
     } catch (err) {
-      console.error("❌ Lỗi đánh dấu đã đọc:", err);
+      console.error(" Lỗi đánh dấu đã đọc:", err);
     }
   };
 

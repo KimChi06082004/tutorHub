@@ -30,8 +30,8 @@ export default function Map({ classes }) {
             <Marker key={c.class_id} position={[c.lat, c.lng]}>
               <Popup>
                 <b>{c.subject}</b> - {c.grade} <br />
-                💰 {c.tuition_amount?.toLocaleString()} VND/h <br />
-                📍 {c.city}
+                {c.tuition_amount?.toLocaleString()} VND/h <br />
+                {c.city}
               </Popup>
             </Marker>
           )

@@ -312,7 +312,7 @@ export default function AdminDashboard() {
         {tab === "classes" && (
           <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
             <h3 className="text-xl font-semibold mb-4 text-[#003366]">
-              📚 Quản lý lớp học
+              Quản lý lớp học
             </h3>
             {/* 🔍 Ô tìm kiếm lớp */}
             <input
@@ -341,7 +341,7 @@ export default function AdminDashboard() {
         {tab === "tutors" && (
           <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
             <h3 className="text-xl font-semibold mb-4 text-[#003366]">
-              🎓 Danh sách gia sư
+              Danh sách gia sư
             </h3>
             {loadingTutors ? (
               <p className="text-center text-gray-500 py-4">
@@ -363,7 +363,7 @@ export default function AdminDashboard() {
         {tab === "revenue" && (
           <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
             <h3 className="text-xl font-semibold mb-4 text-[#003366]">
-              💰 Thống kê doanh thu theo tháng
+              Thống kê doanh thu theo tháng
             </h3>
 
             {/* 🔍 Bộ lọc tháng/năm */}
@@ -442,7 +442,7 @@ export default function AdminDashboard() {
 
                 <div className="mt-6 flex justify-between items-center">
                   <p className="text-gray-700 font-medium">
-                    🧾 Tổng cộng:{" "}
+                    Tổng cộng:{" "}
                     {Number(
                       revenueData.reduce(
                         (sum, r) => sum + Number(r.total_revenue || 0),
@@ -465,7 +465,7 @@ export default function AdminDashboard() {
                       }}
                       className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg"
                     >
-                      📤 Xuất tổng doanh thu
+                      Xuất tổng doanh thu
                     </button>
 
                     {/* Xuất chi tiết giao dịch */}
@@ -491,7 +491,7 @@ export default function AdminDashboard() {
                       }}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg"
                     >
-                      📋 Xuất giao dịch chi tiết
+                      Xuất giao dịch chi tiết
                     </button>
                   </div>
                 </div>

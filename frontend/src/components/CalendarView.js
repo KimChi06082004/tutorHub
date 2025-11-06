@@ -81,7 +81,7 @@ export default function CalendarView({ schedule = {} }) {
               <div className="font-medium mb-1">{daysMap[d]}</div>
               {isSelected ? (
                 <div className="text-xs">
-                  ⏰ {from} - {to}
+                  {from} - {to}
                 </div>
               ) : (
                 <div className="text-xs text-gray-300">–</div>

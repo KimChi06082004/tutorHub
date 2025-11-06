@@ -28,5 +28,5 @@ export const seedData = async () => {
     [3, "Tốt nghiệp Sư phạm Toán", "3 năm dạy kèm", 150000, "Hà Nội", "Toán"]
   );
 
-  console.log("✅ Seeder chạy thành công: Admin, Student, Tutor");
+  console.log(" Seeder chạy thành công: Admin, Student, Tutor");
 };

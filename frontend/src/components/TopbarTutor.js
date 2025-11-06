@@ -146,21 +146,21 @@ export default function TopbarTutor() {
                     className="block px-4 py-2 hover:bg-[#0059b3]"
                     onClick={() => setOpenMenu(null)}
                   >
-                    💸 Cần thanh toán
+                    Cần thanh toán
                   </Link>
                   <Link
                     href="/tutor/payments/paid"
                     className="block px-4 py-2 hover:bg-[#0059b3]"
                     onClick={() => setOpenMenu(null)}
                   >
-                    ✅ Đã thanh toán
+                    Đã thanh toán
                   </Link>
                   <Link
                     href="/tutor/payments/cancelled"
                     className="block px-4 py-2 hover:bg-[#0059b3]"
                     onClick={() => setOpenMenu(null)}
                   >
-                    ❌ Hủy thanh toán
+                    Hủy thanh toán
                   </Link>
                 </div>
               )}
@@ -172,7 +172,7 @@ export default function TopbarTutor() {
                 onClick={() => toggleMenu("class")}
                 className="border border-[#6699cc] bg-transparent px-3 py-1 rounded-md hover:bg-[#004080] transition"
               >
-                📚 Quản lý lớp học ▾
+                Quản lý lớp học ▾
               </button>
               {openMenu === "class" && (
                 <div className="absolute left-0 bg-[#004080] text-white rounded-md mt-1 w-56 shadow-md">
@@ -181,14 +181,14 @@ export default function TopbarTutor() {
                     className="block px-4 py-2 hover:bg-[#0059b3]"
                     onClick={() => setOpenMenu(null)}
                   >
-                    📅 Lịch dạy học
+                    Lịch dạy học
                   </Link>
                   <Link
                     href="/tutor/classes/completed"
                     className="block px-4 py-2 hover:bg-[#0059b3]"
                     onClick={() => setOpenMenu(null)}
                   >
-                    🏁 Lớp kết thúc
+                    Lớp kết thúc
                   </Link>
                 </div>
               )}
@@ -200,7 +200,7 @@ export default function TopbarTutor() {
                 onClick={() => toggleMenu("folder")}
                 className="border border-[#6699cc] bg-transparent px-3 py-1 rounded-md hover:bg-[#004080] transition"
               >
-                📁 Quản lý thư mục ▾
+                Quản lý thư mục ▾
               </button>
               {openMenu === "folder" && (
                 <div className="absolute left-0 bg-[#004080] text-white rounded-md mt-1 w-56 shadow-md">
@@ -212,7 +212,7 @@ export default function TopbarTutor() {
                     }}
                     className="block w-full text-left px-4 py-2 hover:bg-[#0059b3]"
                   >
-                    ✏️ Bài tập đã giao
+                    Bài tập đã giao
                   </button>
                   <button
                     onClick={() => {
@@ -221,7 +221,7 @@ export default function TopbarTutor() {
                     }}
                     className="block w-full text-left px-4 py-2 hover:bg-[#0059b3]"
                   >
-                    📘 Tài liệu đã giao
+                    Tài liệu đã giao
                   </button>
                 </div>
               )}
@@ -232,7 +232,7 @@ export default function TopbarTutor() {
               onClick={() => router.push("/tutor/update-cv")}
               className="bg-yellow-400 text-black font-semibold px-3 py-1 rounded-md hover:bg-yellow-300 transition border border-yellow-500"
             >
-              🧑‍🏫 Cập nhật CV
+              Cập nhật CV
             </button>
           </div>
         </div>
