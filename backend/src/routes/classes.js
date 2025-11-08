@@ -628,7 +628,6 @@ router.get("/revenue", verifyToken, requireRoles("admin"), async (req, res) => {
   }
 });
 
-
 /* =========================================================
    GET /api/classes/:id (chi tiết lớp cho tutor / student)
 ========================================================= */
@@ -1439,6 +1438,48 @@ router.get("/search/classes", async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Lỗi khi tìm kiếm danh sách lớp học." });
+  }
+});
+
+/* =========================================================
+   ✅ Stripe callback: Cập nhật trạng thái thanh toán sau redirect
+   (Không cần verifyToken vì Stripe redirect không có token)
+========================================================= */
+router.put("/:id/confirm-payment-public", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 🧩 Kiểm tra lớp tồn tại
+    const [rows] = await pool.query("SELECT * FROM classes WHERE class_id=?", [
+      id,
+    ]);
+    if (!rows.length)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy lớp học." });
+
+    // 🧩 Cập nhật trạng thái thanh toán
+    await pool.query(
+      "UPDATE classes SET payment_status='PAID', status='IN_PROGRESS', updated_at=NOW() WHERE class_id=?",
+      [id]
+    );
+
+    // 🧩 Ghi nhận đơn hàng
+    const [orderResult] = await pool.query(
+      "INSERT INTO orders (class_id, student_id, total_amount, status) SELECT class_id, student_id, tuition_amount, 'PAID' FROM classes WHERE class_id=?",
+      [id]
+    );
+    const order_id = orderResult.insertId;
+
+    await pool.query(
+      "INSERT INTO payments (order_id, payment_method, amount, status, transaction_code) VALUES (?, 'STRIPE', (SELECT tuition_amount FROM classes WHERE class_id=?), 'SUCCESS', ?)",
+      [order_id, id, `STRIPE_${id}`]
+    );
+
+    res.json({ success: true, message: "Đã xác nhận thanh toán thành công!" });
+  } catch (err) {
+    console.error("❌ Confirm payment public error:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

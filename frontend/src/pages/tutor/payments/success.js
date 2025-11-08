@@ -12,7 +12,9 @@ export default function PaymentSuccess() {
 
     const updateClassStatus = async () => {
       try {
-        const res = await api.put(`/classes/${class_id}/confirm-payment`);
+        const res = await api.put(
+          `/classes/${class_id}/confirm-payment-public`
+        );
         if (res.data.success) {
           alert(" Thanh toán thành công! Lớp đã được kích hoạt.");
           router.push("/tutor/classes/active"); // 👉 chuyển đến trang “Lớp đang dạy”
