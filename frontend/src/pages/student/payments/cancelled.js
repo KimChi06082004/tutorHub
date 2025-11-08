@@ -72,7 +72,6 @@ export default function StudentCancelledClasses() {
             )}
           </div>
         </main>
-        <Footer />
       </div>
     </div>
   );

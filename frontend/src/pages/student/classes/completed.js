@@ -160,8 +160,6 @@ export default function StudentCompletedClasses() {
             </div>
           </div>
         </main>
-
-        <Footer />
       </div>
     </div>
   );

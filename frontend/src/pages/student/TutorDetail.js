@@ -363,7 +363,6 @@ export default function TutorDetail() {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     </div>
   );

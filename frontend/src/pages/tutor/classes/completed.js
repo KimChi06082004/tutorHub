@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../../../utils/api";
 import SidebarTutor from "../../../components/SidebarTutor";
 import TopbarTutor from "../../../components/TopbarTutor";
-import Footer from "../../../components/Footer";
 
 export default function TutorCompletedClasses() {
   const [classes, setClasses] = useState([]);
@@ -80,7 +79,6 @@ export default function TutorCompletedClasses() {
             )}
           </div>
         </main>
-        <Footer />
       </div>
     </div>
   );

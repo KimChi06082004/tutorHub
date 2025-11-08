@@ -300,7 +300,6 @@ export default function ActiveClasses() {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     </div>
   );

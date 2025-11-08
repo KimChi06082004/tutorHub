@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import Sidebar from "../../components/Sidebar";
 import TopbarTutor from "../../components/TopbarTutor";
 import rawData from "../../utils/vietnam-provinces.json";
 import { useRouter } from "next/router";

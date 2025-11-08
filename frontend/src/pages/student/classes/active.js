@@ -143,8 +143,6 @@ export default function StudentActiveClasses() {
             </div>
           </div>
         </main>
-
-        <Footer />
       </div>
     </div>
   );

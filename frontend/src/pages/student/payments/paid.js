@@ -72,7 +72,6 @@ export default function StudentPaidClasses() {
             )}
           </div>
         </main>
-        <Footer />
       </div>
     </div>
   );

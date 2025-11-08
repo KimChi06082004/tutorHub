@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import TopbarTutor from "../../components/TopbarTutor";
 import SidebarTutor from "../../components/SidebarTutor";
-import Footer from "../../components/Footer";
 import { useRouter } from "next/router";
 
 export default function TutorNotifications() {
@@ -168,7 +167,6 @@ export default function TutorNotifications() {
             )}
           </div>
         </main>
-        <Footer />
       </div>
     </div>
   );

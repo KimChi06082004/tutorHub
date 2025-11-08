@@ -157,7 +157,6 @@ export default function StudentNotifications() {
             )}
           </div>
         </main>
-        <Footer />
       </div>
     </div>
   );

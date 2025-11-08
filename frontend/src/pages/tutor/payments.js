@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import SidebarTutor from "../../components/SidebarTutor";
 import TopbarTutor from "../../components/TopbarTutor";
-import Footer from "../../components/Footer";
 import { useRouter } from "next/router";
 
 export default function TutorPayments() {
@@ -313,8 +312,6 @@ export default function TutorPayments() {
             </div>
           </div>
         </main>
-
-        <Footer />
       </div>
     </div>
   );

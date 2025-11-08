@@ -71,7 +71,6 @@ export default function StudentPendingPayments() {
             )}
           </div>
         </main>
-        <Footer />
       </div>
     </div>
   );

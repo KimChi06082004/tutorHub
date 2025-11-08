@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import SidebarTutor from "../../components/SidebarTutor";
 import TopbarTutor from "../../components/TopbarTutor";
-import Footer from "../../components/Footer";
 import dynamic from "next/dynamic";
 
 const VietnamMap = dynamic(() => import("../../components/VietnamMap"), {
@@ -173,8 +172,6 @@ export default function SelectedClasses() {
             )}
           </div>
         </main>
-
-        <Footer />
       </div>
 
       {/* MODAL CHI TIẾT LỚP */}
